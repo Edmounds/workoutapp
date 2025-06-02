@@ -9,6 +9,7 @@ from backend.config import APP_CONFIG, DB_CONFIG
 from backend.routes.users import users_bp
 from backend.routes.workouts import workouts_bp
 from backend.routes.physical import physical_bp
+from backend.routes.admin import admin_bp
 from backend.utils.db import get_db_connection
 
 # 创建应用实例
@@ -22,6 +23,7 @@ CORS(app, supports_credentials=True, origins="*")
 app.register_blueprint(users_bp)
 app.register_blueprint(workouts_bp)
 app.register_blueprint(physical_bp)
+app.register_blueprint(admin_bp)
 
 
 # 健康检查
@@ -66,6 +68,11 @@ if __name__ == '__main__':
     print("  GET  /api/user/running_records - 获取跑步记录")
     print("  POST /api/user/upload_workout - 上传运动记录")
     print("  GET  /api/physical/stats - 获取体能数据")
+    print("  POST /api/admin/login - 管理员登录")
+    print("  GET  /api/admin/users - 获取所有用户列表")
+    print("  GET  /api/admin/stats/registrations - 用户注册统计")
+    print("  GET  /api/admin/stats/active_users - 活跃用户统计")
+    print("  GET  /api/admin/dashboard/overview - 系统概况统计")
     print("  GET  /health - 健康检查")
     print("  GET  /test/db - 测试数据库连接")
     print("=" * 50)

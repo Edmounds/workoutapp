@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： localhost
--- 生成日期： 2025-06-03 04:44:03
+-- 生成日期： 2025-06-03 05:35:23
 -- 服务器版本： 8.0.35
 -- PHP 版本： 8.2.28
 
@@ -20,6 +20,28 @@ SET time_zone = "+00:00";
 --
 -- 数据库： `workout_app`
 --
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `admin_users`
+--
+
+CREATE TABLE `admin_users` (
+  `id` int NOT NULL,
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- 转存表中的数据 `admin_users`
+--
+
+INSERT INTO `admin_users` (`id`, `username`, `password`, `email`, `created_at`, `updated_at`) VALUES
+(1, 'admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'admin@example.com', '2025-06-02 21:29:15', '2025-06-02 21:30:03');
 
 -- --------------------------------------------------------
 
@@ -124,7 +146,9 @@ INSERT INTO `running_records` (`id`, `user_id`, `workout_type`, `start_time`, `e
 (94, 8, '跑步', '2025-05-19 00:57:12', '2025-05-19 01:30:20', 1988, 4634.68, 429, 411, 128, 148, 166, 324, 28.41, '晴朗', 22.6, '今天的跑步训练，感觉很棒！'),
 (95, 8, '间歇跑', '2025-05-26 05:12:12', '2025-05-26 05:29:27', 1035, 3015.90, 343, 311, 120, 142, 176, 211, 7.09, '晴朗', 29.1, '今天的间歇跑训练，感觉一般！'),
 (96, 8, '恢复跑', '2025-05-05 06:35:12', '2025-05-05 07:06:40', 1888, 3385.35, 557, 518, 133, 160, 171, 236, 28.70, '晴朗', 26.4, '今天的恢复跑训练，感觉一般！'),
-(99, 51, '跑步', NULL, NULL, 1800, 5.00, 360, NULL, NULL, NULL, NULL, 350, NULL, NULL, NULL, '');
+(99, 51, '跑步', NULL, NULL, 1800, 5.00, 360, NULL, NULL, NULL, NULL, 350, NULL, NULL, NULL, ''),
+(100, 52, '跑步', '2025-06-03 05:17:34', NULL, 1800, 5000.00, 360, NULL, 128, 152, NULL, 350, NULL, NULL, NULL, '测试上传的运动记录'),
+(101, 53, '跑步', '2025-06-03 05:18:08', NULL, 1800, 5000.00, 360, NULL, 128, 152, NULL, 350, NULL, NULL, NULL, '测试上传的运动记录');
 
 -- --------------------------------------------------------
 
@@ -159,11 +183,20 @@ INSERT INTO `users` (`id`, `openid`, `username`, `gender`, `age`, `height`, `wei
 (8, NULL, 'cxyyy', 1, 20, 180.00, 65.00, 'beginner', 7, 243, 32.66, '2025-05-29 08:31:23', '2025-05-29 12:18:11', '9903ad821163618f28c98eb90baf19adcf07ae3972796e8428f5dea4cde2f478', NULL),
 (9, NULL, 'testuser', NULL, NULL, NULL, NULL, 'beginner', 0, 0, 0.00, '2025-06-02 18:41:39', '2025-06-02 18:41:39', '7e6e0c3079a08c5cc6036789b57e951f65f82383913ba1a49ae992544f1b4b6e', NULL),
 (22, NULL, 'testuser_uawwx', NULL, NULL, NULL, NULL, 'beginner', 0, 0, 0.00, '2025-06-02 19:01:17', '2025-06-02 19:01:17', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', NULL),
-(51, NULL, 'test_user_1748895678', 1, 30, 175.00, 70.00, 'beginner', 1, 30, 0.01, '2025-06-02 20:21:22', '2025-06-02 20:21:31', 'b55c8792d1ce458e279308835f8a97b580263503e76e1998e279703e35ad0c2e', 'test@example.com');
+(51, NULL, 'test_user_1748895678', 1, 30, 175.00, 70.00, 'beginner', 1, 30, 0.01, '2025-06-02 20:21:22', '2025-06-02 20:21:31', 'b55c8792d1ce458e279308835f8a97b580263503e76e1998e279703e35ad0c2e', 'test@example.com'),
+(52, NULL, 'test_user_1748899047', 1, 25, 175.50, 70.00, 'beginner', 1, 30, 5.00, '2025-06-02 21:17:29', '2025-06-02 21:17:36', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'test_user_1748899047@example.com'),
+(53, NULL, 'test_user_1748899081', 1, 25, 175.50, 70.00, 'beginner', 1, 30, 5.00, '2025-06-02 21:18:03', '2025-06-02 21:18:10', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'test_user_1748899081@example.com');
 
 --
 -- 转储表的索引
 --
+
+--
+-- 表的索引 `admin_users`
+--
+ALTER TABLE `admin_users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`);
 
 --
 -- 表的索引 `physical_stats`
@@ -199,6 +232,12 @@ ALTER TABLE `users`
 --
 
 --
+-- 使用表AUTO_INCREMENT `admin_users`
+--
+ALTER TABLE `admin_users`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- 使用表AUTO_INCREMENT `physical_stats`
 --
 ALTER TABLE `physical_stats`
@@ -214,13 +253,13 @@ ALTER TABLE `progress_goals`
 -- 使用表AUTO_INCREMENT `running_records`
 --
 ALTER TABLE `running_records`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
 
 --
 -- 使用表AUTO_INCREMENT `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
 -- 限制导出的表
