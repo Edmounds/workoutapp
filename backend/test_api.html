@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运动手环API测试</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            color: #2c3e50;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .response {
+            background-color: #f8f9fa;
+            border-left: 3px solid #4CAF50;
+            padding: 10px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>运动手环API测试页面</h1>
+    
+    <div class="card">
+        <h2>健康检查</h2>
+        <button id="healthCheck">测试健康检查 /health</button>
+        <div id="healthResponse" class="response"></div>
+    </div>
+    
+    <div class="card">
+        <h2>数据库连接</h2>
+        <button id="dbCheck">测试数据库连接 /test/db</button>
+        <div id="dbResponse" class="response"></div>
+    </div>
+    
+    <div class="card">
+        <h2>用户注册</h2>
+        <div>
+            <label for="regUsername">用户名:</label>
+            <input type="text" id="regUsername" value="test_user">
+            
+            <label for="regPassword">密码:</label>
+            <input type="password" id="regPassword" value="password123">
+            
+            <label for="regEmail">邮箱:</label>
+            <input type="email" id="regEmail" value="test@example.com">
+            
+            <label for="regGender">性别 (0:未知, 1:男, 2:女):</label>
+            <input type="number" id="regGender" value="1" min="0" max="2">
+            
+            <label for="regAge">年龄:</label>
+            <input type="number" id="regAge" value="25">
+            
+            <label for="regHeight">身高 (cm):</label>
+            <input type="number" id="regHeight" value="175.5" step="0.1">
+            
+            <label for="regWeight">体重 (kg):</label>
+            <input type="number" id="regWeight" value="70.0" step="0.1">
+        </div>
+        <button id="register">注册用户 /api/users/register</button>
+        <div id="registerResponse" class="response"></div>
+    </div>
+    
+    <div class="card">
+        <h2>用户登录</h2>
+        <div>
+            <label for="loginUsername">用户名:</label>
+            <input type="text" id="loginUsername" value="test_user">
+            
+            <label for="loginPassword">密码:</label>
+            <input type="password" id="loginPassword" value="password123">
+        </div>
+        <button id="login">登录 /api/users/login</button>
+        <div id="loginResponse" class="response"></div>
+    </div>
+    
+    <div class="card">
+        <h2>获取用户信息</h2>
+        <button id="getUserInfo">获取用户信息 /api/users/all/list</button>
+        <div id="userInfoResponse" class="response"></div>
+    </div>
+    
+    <div class="card">
+        <h2>上传运动记录</h2>
+        <div>
+            <label for="workoutType">运动类型:</label>
+            <input type="text" id="workoutType" value="跑步">
+            
+            <label for="workoutDuration">时长 (秒):</label>
+            <input type="number" id="workoutDuration" value="1800">
+            
+            <label for="workoutDistance">距离 (米):</label>
+            <input type="number" id="workoutDistance" value="5000">
+            
+            <label for="workoutPace">配速 (秒/公里):</label>
+            <input type="number" id="workoutPace" value="360">
+            
+            <label for="workoutCalories">卡路里:</label>
+            <input type="number" id="workoutCalories" value="350">
+            
+            <label for="workoutHeartRate">平均心率:</label>
+            <input type="number" id="workoutHeartRate" value="128">
+            
+            <label for="workoutNotes">备注:</label>
+            <textarea id="workoutNotes">测试上传的运动记录</textarea>
+        </div>
+        <button id="uploadWorkout">上传运动记录 /api/user/upload_workout</button>
+        <div id="uploadWorkoutResponse" class="response"></div>
+    </div>
+    
+    <div class="card">
+        <h2>获取跑步记录</h2>
+        <button id="getRunningRecords">获取跑步记录 /api/user/running_records</button>
+        <div id="runningRecordsResponse" class="response"></div>
+    </div>
+    
+    <script>
+        // 基础URL
+        const BASE_URL = 'http://localhost:5000';
+        let token = null;
+        
+        // 格式化JSON响应
+        function formatResponse(data) {
+            return JSON.stringify(data, null, 2);
+        }
+        
+        // 显示响应结果
+        function showResponse(elementId, status, data) {
+            const responseElement = document.getElementById(elementId);
+            let statusHtml = `<div class="status ${status ? 'success' : 'error'}">${status ? '成功' : '失败'}</div>`;
+            responseElement.innerHTML = statusHtml + formatResponse(data);
+        }
+        
+        // 健康检查
+        document.getElementById('healthCheck').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${BASE_URL}/health`);
+                const data = await response.json();
+                showResponse('healthResponse', response.ok, data);
+            } catch (error) {
+                showResponse('healthResponse', false, { error: error.message });
+            }
+        });
+        
+        // 数据库连接检查
+        document.getElementById('dbCheck').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${BASE_URL}/test/db`);
+                const data = await response.json();
+                showResponse('dbResponse', response.ok, data);
+            } catch (error) {
+                showResponse('dbResponse', false, { error: error.message });
+            }
+        });
+        
+        // 用户注册
+        document.getElementById('register').addEventListener('click', async () => {
+            try {
+                // 在用户名后添加时间戳，确保唯一性
+                const timestamp = new Date().getTime();
+                const username = document.getElementById('regUsername').value + '_' + timestamp;
+                document.getElementById('regUsername').value = username;
+                
+                const data = {
+                    name: username,
+                    password: document.getElementById('regPassword').value,
+                    email: document.getElementById('regEmail').value,
+                    gender: parseInt(document.getElementById('regGender').value),
+                    age: parseInt(document.getElementById('regAge').value),
+                    height: parseFloat(document.getElementById('regHeight').value),
+                    weight: parseFloat(document.getElementById('regWeight').value)
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/users/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const responseData = await response.json();
+                showResponse('registerResponse', response.ok, responseData);
+                
+                // 自动填充登录表单
+                document.getElementById('loginUsername').value = username;
+            } catch (error) {
+                showResponse('registerResponse', false, { error: error.message });
+            }
+        });
+        
+        // 用户登录
+        document.getElementById('login').addEventListener('click', async () => {
+            try {
+                const data = {
+                    name: document.getElementById('loginUsername').value,
+                    password: document.getElementById('loginPassword').value
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/users/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const responseData = await response.json();
+                showResponse('loginResponse', response.ok, responseData);
+                
+                if (response.ok && responseData.data && responseData.data.token) {
+                    token = responseData.data.token;
+                }
+            } catch (error) {
+                showResponse('loginResponse', false, { error: error.message });
+            }
+        });
+        
+        // 获取用户信息
+        document.getElementById('getUserInfo').addEventListener('click', async () => {
+            try {
+                if (!token) {
+                    showResponse('userInfoResponse', false, { error: '请先登录获取令牌' });
+                    return;
+                }
+                
+                const response = await fetch(`${BASE_URL}/api/users/all/list`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                showResponse('userInfoResponse', response.ok, data);
+            } catch (error) {
+                showResponse('userInfoResponse', false, { error: error.message });
+            }
+        });
+        
+        // 上传运动记录
+        document.getElementById('uploadWorkout').addEventListener('click', async () => {
+            try {
+                if (!token) {
+                    showResponse('uploadWorkoutResponse', false, { error: '请先登录获取令牌' });
+                    return;
+                }
+                
+                const data = {
+                    workout_type: document.getElementById('workoutType').value,
+                    start_time: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                    duration: parseInt(document.getElementById('workoutDuration').value),
+                    distance: parseInt(document.getElementById('workoutDistance').value),
+                    avg_pace: parseInt(document.getElementById('workoutPace').value),
+                    calories: parseInt(document.getElementById('workoutCalories').value),
+                    avg_heart_rate: parseInt(document.getElementById('workoutHeartRate').value),
+                    max_heart_rate: parseInt(document.getElementById('workoutHeartRate').value) + 20,
+                    notes: document.getElementById('workoutNotes').value
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/user/upload_workout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const responseData = await response.json();
+                showResponse('uploadWorkoutResponse', response.ok, responseData);
+            } catch (error) {
+                showResponse('uploadWorkoutResponse', false, { error: error.message });
+            }
+        });
+        
+        // 获取跑步记录
+        document.getElementById('getRunningRecords').addEventListener('click', async () => {
+            try {
+                if (!token) {
+                    showResponse('runningRecordsResponse', false, { error: '请先登录获取令牌' });
+                    return;
+                }
+                
+                const response = await fetch(`${BASE_URL}/api/user/running_records`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                showResponse('runningRecordsResponse', response.ok, data);
+            } catch (error) {
+                showResponse('runningRecordsResponse', false, { error: error.message });
+            }
+        });
+    </script>
+</body>
+</html> 
