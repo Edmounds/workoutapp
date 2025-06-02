@@ -1,0 +1,250 @@
+/**index.wxss**/
+page {
+  height: 100vh;
+}
+
+.scrollarea {
+  width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.container {
+  background: #f5f5f5;
+  min-height: 100vh;
+  padding: 20rpx;
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 顶部用户运动摘要 */
+.user-summary {
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.summary-title {
+  color: #333333;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  color: #333333;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin: 30rpx 10rpx 20rpx;
+  display: block;
+}
+
+.stats-container {
+  display: flex;
+  justify-content: space-between;
+  background-color: #f8f8f8;
+  border-radius: 12rpx;
+  padding: 20rpx 0;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+  border-right: 1rpx solid #eaeaea;
+}
+
+.stat-item:last-child {
+  border-right: none;
+}
+
+.stat-value {
+  color: #0052d9;
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.stat-label {
+  color: #888888;
+  font-size: 24rpx;
+  display: block;
+}
+
+/* 网格布局 */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0 10rpx;
+}
+
+.card {
+  width: 48%;
+  background: #ffffff;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 20rpx 10rpx;
+  box-sizing: border-box;
+  color: #333333;
+  min-height: 200rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.05);
+}
+
+.last-card {
+  height: 230rpx;
+}
+
+/* ECharts容器样式 */
+.ec-container {
+  width: 100%;
+  height: 160rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+ec-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.label {
+  font-size: 26rpx;
+  color: #888888;
+  margin-top: 10rpx;
+  text-align: center;
+}
+
+.value {
+  font-weight: bold;
+  color: #333333;
+}
+
+.progress-list {
+  width: 100%;
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.progress-item text {
+  width: 80rpx;
+  color: #333333;
+  font-size: 24rpx;
+  margin-right: 10rpx;
+}
+
+/* AI建议区域 */
+.advice {
+  background: #ffffff;
+  color: #333333;
+  border-radius: 16rpx;
+  margin: 20rpx 10rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.advice .section-title {
+  margin: 0 0 20rpx 0;
+  color: #333333;
+}
+
+.advice-content {
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.6;
+}
+
+/* 训练历史区域 */
+.training-history {
+  background: #ffffff;
+  border-radius: 16rpx;
+  margin: 20rpx 10rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.training-history .t-cell {
+  border-radius: 8rpx;
+  margin-bottom: 12rpx;
+  background-color: #f8f8f8;
+}
+
+.training-history .t-cell__title {
+  font-weight: bold;
+  color: #333333;
+}
+
+.training-history .t-cell__description {
+  color: #666666;
+}
+
+.training-history .t-cell__note {
+  color: #0052d9;
+}
+
+.refresh-tip {
+  text-align: center;
+  color: #999999;
+  font-size: 24rpx;
+  padding: 20rpx;
+  width: 100%;
+}
+
+.data-list {
+  width: 100%;
+  padding: 10rpx 0;
+}
+
+.data-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding: 8rpx 0;
+}
+
+.data-item:last-child {
+  margin-bottom: 0;
+}
+
+.data-title {
+  color: #333333;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.data-value-container {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.data-value {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.data-unit {
+  font-size: 20rpx;
+  color: #888888;
+}

@@ -1,0 +1,166 @@
+<!--pages/plan/plan.wxml-->
+<view class="container">
+  <scroll-view scroll-y class="scrollarea" enhanced="true" show-scrollbar="false">
+    <!-- 个人训练状态概览 -->
+    <view class="status-card">
+      <view class="status-title">训练状态概览</view>
+      <view class="status-row">
+        <view class="status-item">
+          <text class="status-value">{{weeklyDistance}}</text>
+          <text class="status-label">总公里数</text>
+        </view>
+        <view class="status-item">
+          <text class="status-value">{{best5kmTime}}</text>
+          <text class="status-label">最佳5公里</text>
+        </view>
+        <view class="status-item">
+          <text class="status-value">{{userLevelText}}</text>
+          <text class="status-label">当前水平</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 推荐训练计划 -->
+    <view class="section-container">
+      <text class="section-title">推荐训练计划</text>
+      <view class="plan-tabs">
+        <view class="tab {{selectedPlan === 'beginner' ? 'active' : ''}}" bindtap="switchPlan" data-plan="beginner">初级计划</view>
+        <view class="tab {{selectedPlan === 'intermediate' ? 'active' : ''}}" bindtap="switchPlan" data-plan="intermediate">中级计划</view>
+        <view class="tab {{selectedPlan === 'advanced' ? 'active' : ''}}" bindtap="switchPlan" data-plan="advanced">高级计划</view>
+      </view>
+      
+      <view class="plan-container">
+        <view wx:if="{{selectedPlan === 'beginner'}}">
+          <view class="plan-header">
+            <text class="plan-title">初级跑步训练计划</text>
+            <text class="plan-subtitle">适合5公里用时 > 25分钟的跑者</text>
+          </view>
+          
+          <view class="week-plan" wx:for="{{beginnerPlan}}" wx:key="day">
+            <view class="day-header">
+              <text class="day-name">{{item.day}}</text>
+              <text class="day-type {{item.type === '休息' ? 'rest' : (item.type === '恢复跑' ? 'recovery' : 'workout')}}">{{item.type}}</text>
+            </view>
+            <view class="day-content">
+              <text class="day-description">{{item.description}}</text>
+              <text class="day-detail">{{item.detail}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <view wx:if="{{selectedPlan === 'intermediate'}}">
+          <view class="plan-header">
+            <text class="plan-title">中级跑步训练计划</text>
+            <text class="plan-subtitle">适合5公里用时 20-25分钟的跑者</text>
+          </view>
+          
+          <view class="week-plan" wx:for="{{intermediatePlan}}" wx:key="day">
+            <view class="day-header">
+              <text class="day-name">{{item.day}}</text>
+              <text class="day-type {{item.type === '休息' ? 'rest' : (item.type === '恢复跑' ? 'recovery' : 'workout')}}">{{item.type}}</text>
+            </view>
+            <view class="day-content">
+              <text class="day-description">{{item.description}}</text>
+              <text class="day-detail">{{item.detail}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <view wx:if="{{selectedPlan === 'advanced'}}">
+          <view class="plan-header">
+            <text class="plan-title">高级跑步训练计划</text>
+            <text class="plan-subtitle">适合5公里用时 &lt; 20分钟的跑者</text>
+          </view>
+          
+          <view class="week-plan" wx:for="{{advancedPlan}}" wx:key="day">
+            <view class="day-header">
+              <text class="day-name">{{item.day}}</text>
+              <text class="day-type {{item.type === '休息' ? 'rest' : (item.type === '恢复跑' ? 'recovery' : 'workout')}}">{{item.type}}</text>
+            </view>
+            <view class="day-content">
+              <text class="day-description">{{item.description}}</text>
+              <text class="day-detail">{{item.detail}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 营养建议 -->
+    <view class="section-container">
+      <text class="section-title">营养摄入建议</text>
+      
+      <view class="nutrition-cards">
+        <view class="nutrition-card">
+          <view class="nutrition-header">
+            <text class="nutrition-title">训练日</text>
+          </view>
+          <view class="nutrition-content">
+            <view class="nutrition-item">
+              <text class="item-name">碳水化合物</text>
+              <text class="item-value">6-8克/公斤体重</text>
+            </view>
+            <view class="nutrition-item">
+              <text class="item-name">蛋白质</text>
+              <text class="item-value">1.6-1.8克/公斤体重</text>
+            </view>
+            <view class="nutrition-item">
+              <text class="item-name">脂肪</text>
+              <text class="item-value">1克/公斤体重</text>
+            </view>
+            <view class="nutrition-item">
+              <text class="item-name">水分</text>
+              <text class="item-value">35-45毫升/公斤体重</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="nutrition-card">
+          <view class="nutrition-header">
+            <text class="nutrition-title">休息日</text>
+          </view>
+          <view class="nutrition-content">
+            <view class="nutrition-item">
+              <text class="item-name">碳水化合物</text>
+              <text class="item-value">4-5克/公斤体重</text>
+            </view>
+            <view class="nutrition-item">
+              <text class="item-name">蛋白质</text>
+              <text class="item-value">1.4-1.6克/公斤体重</text>
+            </view>
+            <view class="nutrition-item">
+              <text class="item-name">脂肪</text>
+              <text class="item-value">1克/公斤体重</text>
+            </view>
+            <view class="nutrition-item">
+              <text class="item-name">水分</text>
+              <text class="item-value">30-35毫升/公斤体重</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <view class="nutrition-tips" wx:if="{{nutritionTips && nutritionTips.length > 0}}">
+        <text class="tips-header">关键营养建议</text>
+        <view class="tip-item" wx:for="{{nutritionTips}}" wx:key="index">
+          <text class="tip-dot">●</text>
+          <text class="tip-text">{{item.tip}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- AI训练建议 -->
+    <view class="section-container">
+      <text class="section-title">个性化AI建议</text>
+      <view class="ai-advice">
+        <text class="ai-content">{{aiAdviceContent}}</text>
+      </view>
+    </view>
+    
+    <!-- 按钮 -->
+    <view class="action-buttons">
+      <button class="action-button">保存计划到日历</button>
+      <button class="action-button secondary">分享计划</button>
+    </view>
+  </scroll-view>
+</view>

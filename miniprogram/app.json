@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/mine/mine",
+    "pages/plan/plan",
+    "pages/profile/profile",
+    "pages/feedback/feedback"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "运动数据",
+    "navigationBarBackgroundColor": "#ffffff"
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "tabBar": {
+    "color": "#888888",
+    "selectedColor": "#000000",
+    "backgroundColor": "#f5f5f5",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "assets/tab_data.png",
+        "selectedIconPath": "assets/tab_data_selected.png",
+        "text": "数据"
+      },
+      {
+        "pagePath": "pages/plan/plan",
+        "iconPath": "assets/tab_data.png",
+        "selectedIconPath": "assets/tab_data_selected.png",
+        "text": "计划"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "iconPath": "assets/tab_mine.png",
+        "selectedIconPath": "assets/tab_mine_selected.png",
+        "text": "我的"
+      }
+    ]
+  }
+}
