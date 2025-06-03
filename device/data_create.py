@@ -15,19 +15,19 @@ import pymongo
 import decimal
 from bson.objectid import ObjectId
 
-# MySQL连接信息 (本地)
+# MySQL连接信息 (服务器)
 MYSQL_CONFIG = {
-    'host': 'localhost',
+    'host': '113.45.220.0',
     'port': 3306,
     'user': 'cxr',
-    'password': '123456',
+    'password': 'Chenqichen666',
     'database': 'workout_app',
     'charset': 'utf8mb4',
     'autocommit': True
 }
 
 # MongoDB连接信息 (本地)
-MONGO_URI = "mongodb://localhost:27017/"
+MONGO_URI = "mongodb://113.45.220.0:27017/"
 MONGO_DB_NAME = "workout_app"
 HEALTH_DATA_COLLECTION = "user_health_data"
 DAILY_STATS_COLLECTION = "daily_stats"
@@ -76,11 +76,11 @@ def get_mysql_users(mysql_connection):
 
 def calculate_user_profile(user):
     """根据用户信息计算用户运动档案"""
-    age = user.get('age', 25)
-    gender = user.get('gender', 1)  # 1:男, 2:女, 0:未知
-    height = user.get('height', 170)  # cm
-    weight = user.get('weight', 65)  # kg
-    level = user.get('level', 'beginner')
+    age = user.get('age', 25) or 25  # 默认25岁
+    gender = user.get('gender', 1) or 1  # 默认1:男
+    height = user.get('height', 170) or 170  # 默认170cm
+    weight = user.get('weight', 65) or 65  # 默认65kg
+    level = user.get('level', 'beginner') or 'beginner'  # 默认初学者
 
     # 计算BMI
     if height and weight:
@@ -903,12 +903,15 @@ def test_connections():
 
         # 检查现有MySQL数据
         cursor = mysql_conn.cursor()
-        mysql_tables = ['physical_stats', 'running_records', 'progress_goals', 'ai_advice', 'nutrition_tips']
+        mysql_tables = ['physical_stats', 'running_records', 'progress_goals']  # 移除不存在的表
         print("\n📊 MySQL现有数据统计:")
         for table in mysql_tables:
-            cursor.execute(f"SELECT COUNT(*) FROM {table}")
-            count = cursor.fetchone()[0]
-            print(f"   📈 {table}: {count} 条")
+            try:
+                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                count = cursor.fetchone()[0]
+                print(f"   📈 {table}: {count} 条")
+            except Exception as e:
+                print(f"   ❌ 表 {table} 查询失败: {e}")
 
         cursor.close()
         mysql_conn.close()
@@ -918,13 +921,17 @@ def test_connections():
     db, health_collection, daily_stats_collection, mongo_client = connect_to_mongodb()
     mongodb_ok = False
     if health_collection is not None and daily_stats_collection is not None:
-        health_count = health_collection.count_documents({})
-        daily_count = daily_stats_collection.count_documents({})
-        print(f"\n📊 MongoDB现有数据统计:")
-        print(f"   📈 健康数据: {health_count} 条")
-        print(f"   📈 每日统计: {daily_count} 条")
-        mongo_client.close()
-        mongodb_ok = True
+        try:
+            health_count = health_collection.count_documents({})
+            daily_count = daily_stats_collection.count_documents({})
+            print(f"\n📊 MongoDB现有数据统计:")
+            print(f"   📈 健康数据: {health_count} 条")
+            print(f"   📈 每日统计: {daily_count} 条")
+            mongodb_ok = True
+        except Exception as e:
+            print(f"   ❌ MongoDB查询失败: {e}")
+        finally:
+            mongo_client.close()
 
     print("=== 连接测试完成 ===\n")
     return mysql_ok and mongodb_ok
@@ -945,33 +952,10 @@ def main():
 
     print("\n" + "=" * 60)
 
-    # 确认是否继续
-    should_continue = input("🤔 是否开始生成双数据库数据？(y/n): ").lower() == 'y'
-    if not should_continue:
-        print("⏹️  操作取消")
-        return
-
-    # 数据处理选项
-    print("\n📋 数据处理选项:")
-    print("1. 只为没有数据的用户生成（推荐）")
-    print("2. 为所有用户重新生成数据（会覆盖现有数据）")
-    print("3. 完全清空所有数据后重新生成")
-
-    choice = input("请选择处理方式 (1/2/3): ").strip()
-
-    force_regenerate = False
-    should_clear_all = False
-
-    if choice == '2':
-        force_regenerate = True
-        print("✅ 选择：为所有用户重新生成数据")
-    elif choice == '3':
-        should_clear_all = True
-        force_regenerate = True
-        print("✅ 选择：完全清空后重新生成")
-    else:
-        print("✅ 选择：只为没有数据的用户生成")
-
+    # 配置生成参数
+    force_regenerate = True  # 强制为所有用户重新生成数据
+    should_clear_all = False  # 不清空现有数据
+    
     print("\n🚀 开始连接双数据库...")
     mysql_connection = connect_to_mysql()
     db, health_collection, daily_stats_collection, mongo_client = connect_to_mongodb()
@@ -987,63 +971,75 @@ def main():
             print(f"\n👥 找到 {len(users)} 个注册用户，准备生成数据...")
             for user in users:
                 print(f"   - {user['username']} (ID: {user['id']}, 等级: {user.get('level', '未设置')})")
-
-            # 完全清空数据
-            if should_clear_all:
-                print("\n🗑️  完全清空所有数据...")
-
-                # 清空MySQL数据
+            
+            # 插入MySQL数据 - 为每个用户生成15-20条跑步记录
+            for user in users:
+                # 计算用户档案
+                user_profile = calculate_user_profile(user)
+                
+                # 生成15-20条跑步记录
+                records_count = random.randint(15, 20)
+                print(f"\n🏃 为用户 {user['username']} 生成 {records_count} 条额外跑步记录...")
+                
+                running_data = generate_running_records_data(user['id'], user_profile, records_count)
+                
+                # 插入记录
                 cursor = mysql_connection.cursor()
-                mysql_tables = ['ai_advice', 'progress_goals', 'running_records', 'physical_stats', 'nutrition_tips']
-                for table in mysql_tables:
-                    cursor.execute(f"DELETE FROM {table}")
-                    print(f"   ✅ 清空MySQL {table} 表")
-
-                # 重置用户统计
-                cursor.execute("UPDATE users SET total_workouts=0, total_duration=0, total_distance=0")
-                print(f"   ✅ 重置用户统计数据")
-
+                for record in running_data:
+                    cursor.execute("""
+                        INSERT INTO running_records (
+                            user_id, workout_type, start_time, end_time, duration, distance,
+                            avg_pace, best_pace, avg_heart_rate, max_heart_rate, avg_step_rate,
+                            calories, elevation_gain, weather, temperature, notes
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        record['user_id'], record['workout_type'], record['start_time'],
+                        record['end_time'], record['duration'], record['distance'],
+                        record['avg_pace'], record['best_pace'], record['avg_heart_rate'],
+                        record['max_heart_rate'], record['avg_step_rate'], record['calories'],
+                        record['elevation_gain'], record['weather'], record['temperature'],
+                        record['notes']
+                    ))
+                    
+                # 更新用户统计信息
+                cursor.execute("SELECT COUNT(*) FROM running_records WHERE user_id = %s", (user['id'],))
+                total_workouts = cursor.fetchone()[0]
+                
+                cursor.execute("SELECT SUM(duration) FROM running_records WHERE user_id = %s", (user['id'],))
+                total_duration = cursor.fetchone()[0] // 60  # 转换为分钟
+                
+                cursor.execute("SELECT SUM(distance) FROM running_records WHERE user_id = %s", (user['id'],))
+                total_distance = cursor.fetchone()[0] / 1000  # 转换为公里
+                
+                cursor.execute("""
+                    UPDATE users SET 
+                        total_workouts = %s,
+                        total_duration = %s,
+                        total_distance = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (total_workouts, total_duration, total_distance, user['id']))
+                
                 cursor.close()
                 mysql_connection.commit()
+                
+                print(f"   ✅ 成功为用户 {user['username']} 添加 {records_count} 条跑步记录")
+                print(f"   ✅ 更新用户统计: {total_workouts}次训练, {total_duration}分钟, {total_distance:.1f}公里")
+                
+                # 为每个用户生成更多MongoDB健康数据
+                print(f"\n🍃 为用户 {user['username']} 生成MongoDB健康数据...")
+                
+                # 生成30天的历史健康数据
+                health_documents = generate_historical_health_data(user['id'], user['username'], user_profile, 30)
+                health_collection.insert_many(health_documents)
+                
+                # 生成30天的每日统计数据
+                daily_documents = generate_historical_daily_stats(user['id'], user['username'], user_profile, 30)
+                daily_stats_collection.insert_many(daily_documents)
+                
+                print(f"   ✅ 成功为用户 {user['username']} 添加 {len(health_documents)} 条健康数据和 {len(daily_documents)} 条每日统计")
 
-                # 清空MongoDB数据
-                health_collection.delete_many({})
-                daily_stats_collection.delete_many({})
-                print(f"   ✅ 清空MongoDB所有集合")
-                print(f"   🎯 数据库已完全清空，开始重新生成...")
-
-            # 生成数据
-            print(f"\n🎯 数据生成模式: {'强制重新生成' if force_regenerate else '增量生成'}")
-
-            # 插入MySQL数据
-            mysql_stats = insert_mysql_data(mysql_connection, users, force_regenerate)
-
-            # 插入MongoDB数据
-            mongodb_stats = insert_mongodb_data(health_collection, daily_stats_collection, users, force_regenerate)
-
-            # 最终统计
-            print(f"\n🎉 双数据库数据生成完成！")
-            print(f"\n📊 最终数据统计:")
-            print(f"👥 处理用户数: {len(users)} 个")
-
-            print(f"\n🗄️  MySQL数据统计:")
-            total_mysql = 0
-            for table, count in mysql_stats.items():
-                if count > 0:
-                    print(f"   📈 {table}: {count} 条")
-                    total_mysql += count
-            print(f"   📊 MySQL总计: {total_mysql} 条记录")
-
-            print(f"\n🍃 MongoDB数据统计:")
-            total_mongodb = 0
-            for collection, count in mongodb_stats.items():
-                if count > 0:
-                    print(f"   📈 {collection}: {count} 条")
-                    total_mongodb += count
-            print(f"   📊 MongoDB总计: {total_mongodb} 条记录")
-
-            print(f"\n🎯 总计生成数据: {total_mysql + total_mongodb} 条")
-            print(f"🎉 所有用户的个性化运动数据生成完成！")
+            print(f"\n🎉 所有用户的补充数据生成完成！")
 
         finally:
             mysql_connection.close()
