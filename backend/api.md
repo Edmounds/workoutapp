@@ -959,3 +959,380 @@
     }
   }
   ```
+
+## 设备管理相关
+
+### 绑定设备
+- **URL**: `/api/devices/bind`
+- **方法**: `POST`
+- **描述**: 将设备与当前用户绑定
+- **请求头**: `Authorization: Bearer {token}`
+- **请求体**:
+  ```json
+  {
+    "device_id": "DEV20250601001",
+    "secret": "a1b2c3d4e5f6g7h8i9j0"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "设备绑定成功",
+    "data": {
+      "device_id": "DEV20250601001",
+      "device_name": "RunTracker Pro",
+      "device_type": "Wristband",
+      "status": 1
+    }
+  }
+  ```
+
+### 解除设备绑定
+- **URL**: `/api/devices/unbind`
+- **方法**: `POST`
+- **描述**: 解除当前用户与设备的绑定
+- **请求头**: `Authorization: Bearer {token}`
+- **请求体**:
+  ```json
+  {
+    "device_id": "DEV20250601001"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "设备解绑成功"
+  }
+  ```
+
+### 获取用户绑定的设备列表
+- **URL**: `/api/devices/list`
+- **方法**: `GET`
+- **描述**: 获取当前用户绑定的所有设备
+- **请求头**: `Authorization: Bearer {token}`
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "获取成功",
+    "data": [
+      {
+        "id": 1,
+        "device_id": "DEV20250601001",
+        "device_name": "RunTracker Pro",
+        "device_type": "Wristband",
+        "status": 1,
+        "last_active": "2025-06-01 08:35:22"
+      }
+    ]
+  }
+  ```
+
+### 设备连接认证
+- **URL**: `/api/devices/auth`
+- **方法**: `POST`
+- **描述**: 设备连接认证，获取临时访问令牌
+- **请求体**:
+  ```json
+  {
+    "device_id": "DEV20250601001",
+    "secret": "a1b2c3d4e5f6g7h8i9j0"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "认证成功",
+    "data": {
+      "token": "设备临时访问令牌",
+      "expires_in": 3600,
+      "user_id": 7,
+      "username": "用户名"
+    }
+  }
+  ```
+
+### 设备数据上传
+- **URL**: `/api/devices/upload_data`
+- **方法**: `POST`
+- **描述**: 设备上传运动和健康数据
+- **请求头**: `Authorization: Bearer {device_token}`
+- **请求体**:
+  ```json
+  {
+    "data_type": "workout", // workout, health_stats
+    "timestamp": "2025-06-01T08:00:00Z",
+    "data": {
+      // 如果是workout类型
+      "workout_type": "跑步",
+      "duration": 1800,  // 秒
+      "distance": 5000,  // 米
+      "avg_pace": 360,   // 秒/公里
+      "calories": 350,
+      "avg_heart_rate": 128,
+      "max_heart_rate": 152
+      
+      // 如果是health_stats类型
+      // "current_heart_rate": 75,
+      // "avg_blood_oxygen": 98.5,
+      // "steps": 8500,
+      // "stress_index": 25
+    }
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "数据上传成功"
+  }
+  ```
+
+### 修改设备信息
+- **URL**: `/api/devices/update`
+- **方法**: `PUT`
+- **描述**: 修改设备信息
+- **请求头**: `Authorization: Bearer {token}`
+- **请求体**:
+  ```json
+  {
+    "device_id": "DEV20250601001",
+    "device_name": "我的跑步手环"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "设备信息更新成功"
+  }
+  ```
+
+## 管理员设备管理API
+
+### 获取所有设备列表
+- **URL**: `/api/admin/devices`
+- **方法**: `GET`
+- **描述**: 获取所有设备列表（分页）
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **查询参数**:
+  - `page`: 页码（默认1）
+  - `size`: 每页数量（默认20）
+  - `status`: 绑定状态（0:未绑定,1:已绑定,2:已禁用，可选）
+  - `keyword`: 搜索关键词（可选）
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "获取成功",
+    "data": {
+      "total": 100,
+      "page": 1,
+      "size": 20,
+      "devices": [
+        {
+          "id": 1,
+          "device_id": "DEV20250601001",
+          "device_name": "RunTracker Pro",
+          "device_type": "Wristband",
+          "status": 1,
+          "user_id": 7,
+          "username": "pla",
+          "last_active": "2025-06-01 08:35:22",
+          "created_at": "2025-06-01 08:00:00"
+        }
+      ]
+    }
+  }
+  ```
+
+### 添加新设备
+- **URL**: `/api/admin/devices`
+- **方法**: `POST`
+- **描述**: 添加新设备到系统
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **请求体**:
+  ```json
+  {
+    "device_id": "DEV20250610001",
+    "secret": "newdevicesecretkey",
+    "device_name": "RunTracker Pro",
+    "device_type": "Wristband"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 201,
+    "message": "设备添加成功",
+    "data": {
+      "id": 4,
+      "device_id": "DEV20250610001"
+    }
+  }
+  ```
+
+### 批量添加设备
+- **URL**: `/api/admin/devices/batch`
+- **方法**: `POST`
+- **描述**: 批量添加设备
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **请求体**:
+  ```json
+  {
+    "devices": [
+      {
+        "device_id": "DEV20250610001",
+        "secret": "secretkey1",
+        "device_name": "RunTracker Pro",
+        "device_type": "Wristband"
+      },
+      {
+        "device_id": "DEV20250610002",
+        "secret": "secretkey2",
+        "device_name": "RunTracker Pro",
+        "device_type": "Wristband"
+      }
+    ]
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 201,
+    "message": "批量添加成功",
+    "data": {
+      "total": 2,
+      "success": 2,
+      "failed": 0
+    }
+  }
+  ```
+
+### 修改设备信息（管理员）
+- **URL**: `/api/admin/devices/{device_id}`
+- **方法**: `PUT`
+- **描述**: 修改设备信息
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **请求体**:
+  ```json
+  {
+    "device_name": "RunTracker Pro Plus",
+    "device_type": "Wristband Pro",
+    "status": 1
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "设备信息更新成功"
+  }
+  ```
+
+### 删除设备
+- **URL**: `/api/admin/devices/{device_id}`
+- **方法**: `DELETE`
+- **描述**: 从系统中删除设备
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "设备删除成功"
+  }
+  ```
+
+### 重置设备密钥
+- **URL**: `/api/admin/devices/{device_id}/reset_secret`
+- **方法**: `POST`
+- **描述**: 重置设备密钥
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "设备密钥重置成功",
+    "data": {
+      "device_id": "DEV20250601001",
+      "new_secret": "newgeneratedsecretkey"
+    }
+  }
+  ```
+
+### 设备数据统计
+- **URL**: `/api/admin/stats/devices`
+- **方法**: `GET`
+- **描述**: 获取设备统计数据
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "获取成功",
+    "data": {
+      "total_devices": 100,
+      "bound_devices": 80,
+      "unbound_devices": 18,
+      "disabled_devices": 2,
+      "active_devices_today": 45,
+      "active_devices_week": 72,
+      "by_type": [
+        {
+          "device_type": "Wristband",
+          "count": 75,
+          "percentage": 75.0
+        },
+        {
+          "device_type": "Smartwatch",
+          "count": 25,
+          "percentage": 25.0
+        }
+      ]
+    }
+  }
+  ```
+
+### 导入设备数据
+- **URL**: `/api/admin/devices/import`
+- **方法**: `POST`
+- **描述**: 从CSV文件导入设备数据
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **请求体**: 
+  - Content-Type: multipart/form-data
+  - file: CSV文件
+- **响应**:
+  ```json
+  {
+    "code": 200,
+    "message": "导入成功",
+    "data": {
+      "total": 10,
+      "success": 8,
+      "failed": 2,
+      "errors": [
+        {
+          "row": 3,
+          "error": "设备ID已存在"
+        },
+        {
+          "row": 5,
+          "error": "设备ID格式无效"
+        }
+      ]
+    }
+  }
+  ```
+
+### 导出设备数据
+- **URL**: `/api/admin/devices/export`
+- **方法**: `GET`
+- **描述**: 导出设备数据为CSV文件
+- **请求头**: `Authorization: Bearer {admin_token}`
+- **查询参数**:
+  - `status`: 绑定状态（可选）
+  - `device_type`: 设备类型（可选）
+- **响应**: CSV文件下载

@@ -1,9 +1,0 @@
-{
-  "usingComponents": {
-    "ec-canvas": "/components/ec-canvas/ec-canvas",
-    "t-progress": "tdesign-miniprogram/progress/progress"
-  },
-  "enablePullDownRefresh": true,
-  "backgroundColor": "#111111",
-  "backgroundTextStyle": "light"
-}

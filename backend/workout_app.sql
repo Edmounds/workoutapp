@@ -46,6 +46,34 @@ INSERT INTO `admin_users` (`id`, `username`, `password`, `email`, `created_at`, 
 -- --------------------------------------------------------
 
 --
+-- 表的结构 `devices`
+--
+
+CREATE TABLE `devices` (
+  `id` int NOT NULL,
+  `device_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '设备ID',
+  `secret` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '设备密钥',
+  `user_id` int DEFAULT NULL COMMENT '绑定的用户ID',
+  `status` tinyint NOT NULL DEFAULT '0' COMMENT '绑定状态:0未绑定,1已绑定,2已禁用',
+  `device_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '设备名称',
+  `device_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '设备类型',
+  `last_active` timestamp NULL DEFAULT NULL COMMENT '最后活跃时间',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- 转存表中的数据 `devices`
+--
+
+INSERT INTO `devices` (`id`, `device_id`, `secret`, `user_id`, `status`, `device_name`, `device_type`, `last_active`, `created_at`, `updated_at`) VALUES
+(1, 'DEV20250601001', 'a1b2c3d4e5f6g7h8i9j0', 7, 1, 'RunTracker Pro', 'Wristband', '2025-06-01 08:35:22', '2025-06-01 08:00:00', '2025-06-01 08:35:22'),
+(2, 'DEV20250601002', 'k1l2m3n4o5p6q7r8s9t0', 8, 1, 'FitBand Mini', 'Wristband', '2025-06-02 09:12:45', '2025-06-01 09:30:00', '2025-06-02 09:12:45'),
+(3, 'DEV20250601003', 'u1v2w3x4y5z6a7b8c9d0', NULL, 0, 'HealthMonitor X1', 'Wristband', NULL, '2025-06-01 10:15:00', '2025-06-01 10:15:00');
+
+-- --------------------------------------------------------
+
+--
 -- 表的结构 `physical_stats`
 --
 
@@ -199,6 +227,14 @@ ALTER TABLE `admin_users`
   ADD UNIQUE KEY `username` (`username`);
 
 --
+-- 表的索引 `devices`
+--
+ALTER TABLE `devices`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `device_id` (`device_id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
 -- 表的索引 `physical_stats`
 --
 ALTER TABLE `physical_stats`
@@ -238,6 +274,12 @@ ALTER TABLE `admin_users`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- 使用表AUTO_INCREMENT `devices`
+--
+ALTER TABLE `devices`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- 使用表AUTO_INCREMENT `physical_stats`
 --
 ALTER TABLE `physical_stats`
@@ -264,6 +306,12 @@ ALTER TABLE `users`
 --
 -- 限制导出的表
 --
+
+--
+-- 限制表 `devices`
+--
+ALTER TABLE `devices`
+  ADD CONSTRAINT `devices_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- 限制表 `physical_stats`
