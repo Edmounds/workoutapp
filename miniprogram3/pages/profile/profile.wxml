@@ -1,0 +1,157 @@
+<!-- profile.wxml -->
+<view class="profile-container">
+  <!-- 用户信息卡片 -->
+  <view class="profile-header card">
+    <view class="user-info">
+      <view class="user-avatar">
+        <!-- 使用文字头像替代图片 -->
+        <text class="avatar-text">{{userInfo.username ? userInfo.username[0] : 'U'}}</text>
+      </view>
+      <view class="user-details">
+        <text class="user-name">{{userInfo.username || '用户名'}}</text>
+        <text class="user-level">{{userInfo.level || '初级跑者'}}</text>
+      </view>
+    </view>
+    <view class="user-stats">
+      <view class="stat-item">
+        <text class="stat-value">{{userInfo.total_workouts || 0}}</text>
+        <text class="stat-label">总运动次数</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{userInfo.total_distance || 0}}km</text>
+        <text class="stat-label">总里程</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{formattedDuration}}</text>
+        <text class="stat-label">总时长</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 个人信息设置 -->
+  <view class="profile-section card">
+    <view class="section-header">
+      <text class="section-title">个人信息</text>
+      <text class="edit-btn" bindtap="editProfile">编辑</text>
+    </view>
+    <view class="info-list">
+      <view class="info-item">
+        <text class="info-label">性别</text>
+        <text class="info-value">{{userInfo.gender === 1 ? '男' : userInfo.gender === 2 ? '女' : '未设置'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">年龄</text>
+        <text class="info-value">{{userInfo.age || '--'}} 岁</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">身高</text>
+        <text class="info-value">{{userInfo.height || '--'}} cm</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">体重</text>
+        <text class="info-value">{{userInfo.weight || '--'}} kg</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">BMI</text>
+        <text class="info-value">{{bmi || '--'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 成就卡片 -->
+  <view class="profile-section card">
+    <view class="section-header">
+      <text class="section-title">我的成就</text>
+    </view>
+    <view class="achievement-list" wx:if="{{achievements.length > 0}}">
+      <view class="achievement-item" wx:for="{{achievements}}" wx:key="id">
+        <view class="achievement-icon">
+          <text>🏆</text>
+        </view>
+        <view class="achievement-details">
+          <text class="achievement-title">{{item.title}}</text>
+          <text class="achievement-desc">{{item.description}}</text>
+          <text class="achievement-date">{{item.date}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="no-data" wx:else>
+      <text>暂无成就记录</text>
+    </view>
+  </view>
+
+  <!-- 设置列表 -->
+  <view class="profile-section card">
+    <view class="section-header">
+      <text class="section-title">设置</text>
+    </view>
+    <view class="settings-list">
+      <view class="settings-item" bindtap="navigateToSettings">
+        <text class="settings-label">通用设置</text>
+        <text class="settings-arrow">></text>
+      </view>
+      <view class="settings-item" bindtap="navigateToPrivacy">
+        <text class="settings-label">隐私政策</text>
+        <text class="settings-arrow">></text>
+      </view>
+      <view class="settings-item" bindtap="navigateToAbout">
+        <text class="settings-label">关于我们</text>
+        <text class="settings-arrow">></text>
+      </view>
+      <view class="settings-item" bindtap="handleLogout">
+        <text class="settings-label logout">退出登录</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="app-version">
+    <text>版本 1.0.0</text>
+  </view>
+</view>
+
+<!-- 编辑个人信息弹窗 -->
+<view class="edit-profile-modal" wx:if="{{showEditModal}}">
+  <view class="modal-mask" bindtap="closeEditModal"></view>
+  <view class="modal-content">
+    <view class="modal-header">
+      <text class="modal-title">编辑个人信息</text>
+      <text class="modal-close" bindtap="closeEditModal">×</text>
+    </view>
+    <view class="modal-body">
+      <view class="form-group">
+        <text class="form-label">性别</text>
+        <radio-group class="radio-group" bindchange="genderChange">
+          <label class="radio">
+            <radio value="1" checked="{{userInfo.gender === 1}}" /> 男
+          </label>
+          <label class="radio">
+            <radio value="2" checked="{{userInfo.gender === 2}}" /> 女
+          </label>
+        </radio-group>
+      </view>
+      <view class="form-group">
+        <text class="form-label">年龄</text>
+        <input type="number" class="form-input" placeholder="请输入年龄" value="{{userInfo.age}}" bindinput="ageInput" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">身高 (cm)</text>
+        <input type="digit" class="form-input" placeholder="请输入身高" value="{{userInfo.height}}" bindinput="heightInput" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">体重 (kg)</text>
+        <input type="digit" class="form-input" placeholder="请输入体重" value="{{userInfo.weight}}" bindinput="weightInput" />
+      </view>
+    </view>
+    <view class="modal-footer">
+      <button class="btn-cancel" bindtap="closeEditModal">取消</button>
+      <button class="btn-save" bindtap="saveProfile" loading="{{isSaving}}">保存</button>
+    </view>
+  </view>
+</view>
+
+<!-- 加载提示 -->
+<view class="loading-container" wx:if="{{isLoading}}">
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view> 

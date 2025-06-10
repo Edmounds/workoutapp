@@ -1,0 +1,97 @@
+<!-- login.wxml -->
+<view class="login-container">
+  <view class="login-header">
+    <view class="app-logo">
+      <!-- 使用文字作为logo -->
+      <text class="logo-text">R</text>
+    </view>
+    <text class="app-title">运动手环</text>
+    <text class="app-subtitle">记录每一步健康</text>
+  </view>
+
+  <!-- 切换标签 -->
+  <view class="tab-container">
+    <view class="tab {{activeTab === 'login' ? 'active' : ''}}" bindtap="switchTab" data-tab="login">
+      <text>登录</text>
+    </view>
+    <view class="tab {{activeTab === 'register' ? 'active' : ''}}" bindtap="switchTab" data-tab="register">
+      <text>注册</text>
+    </view>
+    <view class="tab-slider" style="left: {{activeTab === 'login' ? '0' : '50%'}}"></view>
+  </view>
+
+  <!-- 登录表单 -->
+  <view class="form-container {{activeTab === 'login' ? 'show' : 'hide'}}">
+    <view class="text-field">
+      <input type="text" placeholder=" " bindinput="usernameInput" />
+      <view class="text-field-label">用户名</view>
+    </view>
+    <view class="text-field">
+      <input type="password" placeholder=" " bindinput="passwordInput" />
+      <view class="text-field-label">密码</view>
+    </view>
+    <view class="error-message" wx:if="{{loginError}}">{{loginError}}</view>
+    <button class="btn-login" bindtap="handleLogin" loading="{{isLoggingIn}}">登录</button>
+  </view>
+
+  <!-- 注册表单 -->
+  <view class="form-container {{activeTab === 'register' ? 'show' : 'hide'}}">
+    <view class="text-field">
+      <input type="text" placeholder=" " bindinput="regUsernameInput" />
+      <view class="text-field-label">用户名</view>
+    </view>
+    <view class="text-field">
+      <input type="password" placeholder=" " bindinput="regPasswordInput" />
+      <view class="text-field-label">密码</view>
+    </view>
+    <view class="text-field">
+      <input type="password" placeholder=" " bindinput="regConfirmPasswordInput" />
+      <view class="text-field-label">确认密码</view>
+    </view>
+    <view class="form-row">
+      <view class="form-item half">
+        <view class="text-field">
+          <input type="number" placeholder=" " bindinput="regAgeInput" />
+          <view class="text-field-label">年龄</view>
+        </view>
+      </view>
+      <view class="form-item half">
+        <view class="gender-select">
+          <text class="gender-label">性别</text>
+          <radio-group bindchange="regGenderChange">
+            <label class="radio">
+              <radio value="1" checked="{{gender === '1'}}" /> 男
+            </label>
+            <label class="radio">
+              <radio value="2" checked="{{gender === '2'}}" /> 女
+            </label>
+          </radio-group>
+        </view>
+      </view>
+    </view>
+    <view class="form-row">
+      <view class="form-item half">
+        <view class="text-field">
+          <input type="digit" placeholder=" " bindinput="regHeightInput" />
+          <view class="text-field-label">身高(cm)</view>
+        </view>
+      </view>
+      <view class="form-item half">
+        <view class="text-field">
+          <input type="digit" placeholder=" " bindinput="regWeightInput" />
+          <view class="text-field-label">体重(kg)</view>
+        </view>
+      </view>
+    </view>
+    <view class="text-field optional">
+      <input type="text" placeholder=" " bindinput="regEmailInput" />
+      <view class="text-field-label">邮箱 (可选)</view>
+    </view>
+    <view class="error-message" wx:if="{{registerError}}">{{registerError}}</view>
+    <button class="btn-register" bindtap="handleRegister" loading="{{isRegistering}}">注册</button>
+  </view>
+
+  <view class="login-footer">
+    <text>© 2023 运动手环 保留所有权利</text>
+  </view>
+</view> 

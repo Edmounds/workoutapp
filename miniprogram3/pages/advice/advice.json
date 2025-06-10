@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "健康建议",
+  "navigationBarBackgroundColor": "#6200EE",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {}
+} 

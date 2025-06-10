@@ -1668,4 +1668,430 @@ def import_users(current_admin_id):
         
     except Exception as e:
         logger.error(f"导入用户数据错误: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'})
+
+
+# 设备管理相关API
+@admin_bp.route('/devices', methods=['GET'])
+@admin_token_required
+def get_all_devices(current_admin_id):
+    """获取所有设备列表（分页）"""
+    try:
+        page = int(request.args.get('page', 1))
+        size = int(request.args.get('size', 20))
+        status = request.args.get('status')
+        keyword = request.args.get('keyword', '')
+        
+        if page < 1:
+            page = 1
+        if size < 1 or size > 100:
+            size = 20
+            
+        offset = (page - 1) * size
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'code': 500, 'message': '数据库连接失败'})
+
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        # 构建查询条件
+        where_clause = ""
+        params = []
+        
+        conditions = []
+        if status is not None:
+            try:
+                status_int = int(status)
+                conditions.append("d.status = %s")
+                params.append(status_int)
+            except ValueError:
+                pass
+        
+        if keyword:
+            conditions.append("(d.device_id LIKE %s OR d.device_name LIKE %s OR d.device_type LIKE %s)")
+            params.extend([f'%{keyword}%', f'%{keyword}%', f'%{keyword}%'])
+            
+        if conditions:
+            where_clause = "WHERE " + " AND ".join(conditions)
+            
+        # 获取总记录数
+        count_sql = f"SELECT COUNT(*) as total FROM devices d {where_clause}"
+        cursor.execute(count_sql, params)
+        total = cursor.fetchone()['total']
+        
+        # 查询设备列表
+        sql = f"""
+            SELECT d.id, d.device_id, d.device_name, d.device_type, d.status, 
+                   d.user_id, u.username, d.last_active, d.created_at
+            FROM devices d
+            LEFT JOIN users u ON d.user_id = u.id
+            {where_clause}
+            ORDER BY d.id DESC
+            LIMIT %s, %s
+        """
+        cursor.execute(sql, params + [offset, size])
+        
+        devices = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        response_data = {
+            'total': total,
+            'page': page,
+            'size': size,
+            'devices': devices
+        }
+        
+        return jsonify({'code': 200, 'message': '获取成功', 'data': response_data})
+        
+    except Exception as e:
+        logger.error(f"获取设备列表错误: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'})
+
+
+@admin_bp.route('/devices', methods=['POST'])
+@admin_token_required
+def add_device(current_admin_id):
+    """添加新设备到系统"""
+    try:
+        data = request.get_json()
+        
+        required_fields = ['device_id', 'secret', 'device_name', 'device_type']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'code': 400, 'message': f'缺少必要参数: {field}'})
+        
+        device_id = data['device_id']
+        secret = data['secret']
+        device_name = data['device_name']
+        device_type = data['device_type']
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'code': 500, 'message': '数据库连接失败'})
+
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        # 检查设备ID是否已存在
+        cursor.execute("SELECT id FROM devices WHERE device_id = %s", (device_id,))
+        if cursor.fetchone():
+            return jsonify({'code': 400, 'message': '设备ID已存在'})
+        
+        # 插入新设备
+        cursor.execute("""
+            INSERT INTO devices (device_id, secret, device_name, device_type, status, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, 0, NOW(), NOW())
+        """, (device_id, secret, device_name, device_type))
+        
+        conn.commit()
+        new_device_id = cursor.lastrowid
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'code': 201,
+            'message': '设备添加成功',
+            'data': {
+                'id': new_device_id,
+                'device_id': device_id
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"添加设备错误: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'})
+
+
+@admin_bp.route('/devices/batch', methods=['POST'])
+@admin_token_required
+def batch_add_devices(current_admin_id):
+    """批量添加设备"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'devices' not in data or not isinstance(data['devices'], list):
+            return jsonify({'code': 400, 'message': '无效的请求数据'})
+        
+        devices = data['devices']
+        if not devices:
+            return jsonify({'code': 400, 'message': '设备列表为空'})
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'code': 500, 'message': '数据库连接失败'})
+
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        total = len(devices)
+        success = 0
+        failed = 0
+        
+        for device in devices:
+            try:
+                if not all(k in device for k in ['device_id', 'secret', 'device_name', 'device_type']):
+                    failed += 1
+                    continue
+                
+                # 检查设备ID是否已存在
+                cursor.execute("SELECT id FROM devices WHERE device_id = %s", (device['device_id'],))
+                if cursor.fetchone():
+                    failed += 1
+                    continue
+                
+                # 插入新设备
+                cursor.execute("""
+                    INSERT INTO devices (device_id, secret, device_name, device_type, status, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, 0, NOW(), NOW())
+                """, (device['device_id'], device['secret'], device['device_name'], device['device_type']))
+                
+                conn.commit()
+                success += 1
+                
+            except Exception as e:
+                logger.error(f"批量添加设备错误: {e}")
+                failed += 1
+                conn.rollback()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'code': 201,
+            'message': '批量添加成功',
+            'data': {
+                'total': total,
+                'success': success,
+                'failed': failed
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"批量添加设备错误: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'})
+
+
+@admin_bp.route('/devices/<device_id>', methods=['PUT'])
+@admin_token_required
+def update_device_info(current_admin_id, device_id):
+    """修改设备信息"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'code': 400, 'message': '无效的请求数据'})
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'code': 500, 'message': '数据库连接失败'})
+
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        # 检查设备是否存在
+        cursor.execute("SELECT * FROM devices WHERE device_id = %s", (device_id,))
+        device = cursor.fetchone()
+        
+        if not device:
+            return jsonify({'code': 404, 'message': '设备不存在'})
+        
+        # 构建更新SQL
+        update_fields = []
+        params = []
+        
+        if 'device_name' in data:
+            update_fields.append("device_name = %s")
+            params.append(data['device_name'])
+            
+        if 'device_type' in data:
+            update_fields.append("device_type = %s")
+            params.append(data['device_type'])
+            
+        if 'status' in data:
+            try:
+                status = int(data['status'])
+                if status not in [0, 1, 2]:
+                    return jsonify({'code': 400, 'message': '无效的状态值'})
+                
+                update_fields.append("status = %s")
+                params.append(status)
+                
+                # 如果状态设为未绑定，清除用户ID
+                if status == 0:
+                    update_fields.append("user_id = NULL")
+            except ValueError:
+                return jsonify({'code': 400, 'message': '无效的状态值'})
+        
+        if not update_fields:
+            return jsonify({'code': 400, 'message': '没有提供要更新的字段'})
+        
+        # 更新设备信息
+        sql = f"""
+            UPDATE devices
+            SET {", ".join(update_fields)}, updated_at = NOW()
+            WHERE device_id = %s
+        """
+        params.append(device_id)
+        
+        cursor.execute(sql, params)
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'code': 200, 'message': '设备信息更新成功'})
+        
+    except Exception as e:
+        logger.error(f"更新设备信息错误: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'})
+
+
+@admin_bp.route('/devices/<device_id>', methods=['DELETE'])
+@admin_token_required
+def delete_device(current_admin_id, device_id):
+    """从系统中删除设备"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'code': 500, 'message': '数据库连接失败'})
+
+        cursor = conn.cursor()
+        
+        # 检查设备是否存在
+        cursor.execute("SELECT id FROM devices WHERE device_id = %s", (device_id,))
+        if not cursor.fetchone():
+            return jsonify({'code': 404, 'message': '设备不存在'})
+        
+        # 删除设备
+        cursor.execute("DELETE FROM devices WHERE device_id = %s", (device_id,))
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'code': 200, 'message': '设备删除成功'})
+        
+    except Exception as e:
+        logger.error(f"删除设备错误: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'})
+
+
+@admin_bp.route('/devices/<device_id>/reset_secret', methods=['POST'])
+@admin_token_required
+def reset_device_secret(current_admin_id, device_id):
+    """重置设备密钥"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'code': 500, 'message': '数据库连接失败'})
+
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        # 检查设备是否存在
+        cursor.execute("SELECT * FROM devices WHERE device_id = %s", (device_id,))
+        device = cursor.fetchone()
+        
+        if not device:
+            return jsonify({'code': 404, 'message': '设备不存在'})
+        
+        # 生成新的密钥
+        import uuid
+        new_secret = str(uuid.uuid4()).replace('-', '')
+        
+        # 更新设备密钥
+        cursor.execute(
+            "UPDATE devices SET secret = %s, updated_at = NOW() WHERE device_id = %s",
+            (new_secret, device_id)
+        )
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'code': 200,
+            'message': '设备密钥重置成功',
+            'data': {
+                'device_id': device_id,
+                'new_secret': new_secret
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"重置设备密钥错误: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'})
+
+
+@admin_bp.route('/stats/devices', methods=['GET'])
+@admin_token_required
+def get_devices_stats(current_admin_id):
+    """获取设备统计数据"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'code': 500, 'message': '数据库连接失败'})
+
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        # 获取设备总数
+        cursor.execute("SELECT COUNT(*) as total FROM devices")
+        total_devices = cursor.fetchone()['total']
+        
+        # 获取已绑定设备数量
+        cursor.execute("SELECT COUNT(*) as count FROM devices WHERE status = 1")
+        bound_devices = cursor.fetchone()['count']
+        
+        # 获取未绑定设备数量
+        cursor.execute("SELECT COUNT(*) as count FROM devices WHERE status = 0")
+        unbound_devices = cursor.fetchone()['count']
+        
+        # 获取已禁用设备数量
+        cursor.execute("SELECT COUNT(*) as count FROM devices WHERE status = 2")
+        disabled_devices = cursor.fetchone()['count']
+        
+        # 获取今日活跃设备数量
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM devices 
+            WHERE last_active >= CURDATE()
+        """)
+        active_devices_today = cursor.fetchone()['count']
+        
+        # 获取本周活跃设备数量
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM devices 
+            WHERE last_active >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        """)
+        active_devices_week = cursor.fetchone()['count']
+        
+        # 获取设备类型分布
+        cursor.execute("""
+            SELECT device_type, COUNT(*) as count
+            FROM devices
+            GROUP BY device_type
+            ORDER BY count DESC
+        """)
+        device_types = cursor.fetchall()
+        
+        # 计算百分比
+        for device_type in device_types:
+            device_type['percentage'] = round(device_type['count'] / total_devices * 100, 1) if total_devices > 0 else 0
+        
+        cursor.close()
+        conn.close()
+        
+        response_data = {
+            'total_devices': total_devices,
+            'bound_devices': bound_devices,
+            'unbound_devices': unbound_devices,
+            'disabled_devices': disabled_devices,
+            'active_devices_today': active_devices_today,
+            'active_devices_week': active_devices_week,
+            'by_type': device_types
+        }
+        
+        return jsonify({'code': 200, 'message': '获取成功', 'data': response_data})
+        
+    except Exception as e:
+        logger.error(f"获取设备统计数据错误: {traceback.format_exc()}")
         return jsonify({'code': 500, 'message': f'服务器内部错误: {str(e)}'}) 

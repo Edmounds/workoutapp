@@ -1,0 +1,114 @@
+<!-- stats.wxml -->
+<view class="stats-container">
+  <!-- 顶部卡片：用户健康摘要 -->
+  <view class="health-card card">
+    <view class="card-header">
+      <text class="card-title">健康概览</text>
+      <text class="card-date">{{currentDate}}</text>
+    </view>
+    <view class="health-data">
+      <view class="health-item">
+        <view class="health-item-value">{{physicalStats.health_index || 0}}</view>
+        <view class="health-item-label">健康指数</view>
+      </view>
+      <view class="health-item">
+        <view class="health-item-value">{{physicalStats.current_heart_rate || 0}}</view>
+        <view class="health-item-label">当前心率</view>
+      </view>
+      <view class="health-item">
+        <view class="health-item-value">{{physicalStats.avg_blood_oxygen || 0}}%</view>
+        <view class="health-item-label">血氧</view>
+      </view>
+      <view class="health-item">
+        <view class="health-item-value">{{physicalStats.weekly_distance || 0}}km</view>
+        <view class="health-item-label">本周里程</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 运动数据图表 -->
+  <view class="stat-card card">
+    <view class="card-header">
+      <text class="card-title">跑步数据</text>
+      <view class="card-filter">
+        <text class="{{timeRange === 'week' ? 'active' : ''}}" bindtap="switchTimeRange" data-range="week">周</text>
+        <text class="{{timeRange === 'month' ? 'active' : ''}}" bindtap="switchTimeRange" data-range="month">月</text>
+        <text class="{{timeRange === 'year' ? 'active' : ''}}" bindtap="switchTimeRange" data-range="year">年</text>
+      </view>
+    </view>
+    <view class="chart-container">
+      <!-- 使用wx-canvas绘制图表 -->
+      <canvas canvas-id="runningChart" class="chart-canvas" bindtouchstart="touchHandler"></canvas>
+    </view>
+  </view>
+
+  <!-- 运动记录列表 -->
+  <view class="record-card card">
+    <view class="card-header">
+      <text class="card-title">最近运动</text>
+      <text class="card-more" bindtap="viewAllRecords">查看全部</text>
+    </view>
+    <view wx:if="{{runningRecords.length === 0}}" class="no-data">
+      <text>暂无运动记录</text>
+    </view>
+    <view wx:else class="record-list">
+      <view class="record-item" wx:for="{{runningRecords}}" wx:key="id" bindtap="viewRecordDetail" data-id="{{item.id}}">
+        <view class="record-date">
+          <text>{{item.start_time}}</text>
+        </view>
+        <view class="record-info">
+          <view class="record-type">{{item.workout_type}}</view>
+          <view class="record-stats">
+            <text>{{item.distance_km}}km</text>
+            <text class="record-dot">·</text>
+            <text>{{item.duration_minutes}}分钟</text>
+            <text class="record-dot">·</text>
+            <text>{{item.avg_pace_formatted}}/km</text>
+          </view>
+        </view>
+        <view class="record-arrow">
+          <text class="arrow-icon">></text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 身体指标卡片 -->
+  <view class="metrics-card card">
+    <view class="card-header">
+      <text class="card-title">身体指标</text>
+    </view>
+    <view class="metrics-grid">
+      <view class="metric-item">
+        <view class="metric-value">{{physicalStats.resting_heart_rate || '--'}}</view>
+        <view class="metric-label">静息心率</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-value">{{physicalStats.aerobic_capacity || '--'}}</view>
+        <view class="metric-label">有氧能力</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-value">{{physicalStats.stress_index || '--'}}%</view>
+        <view class="metric-label">压力指数</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-value">{{physicalStats.sleep_quality || '--'}}</view>
+        <view class="metric-label">睡眠质量</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-value">{{userInfo.weight || '--'}}kg</view>
+        <view class="metric-label">体重</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-value">{{userInfo.height || '--'}}cm</view>
+        <view class="metric-label">身高</view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载提示 -->
+<view class="loading-container" wx:if="{{isLoading}}">
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view> 

@@ -1,0 +1,218 @@
+/* login.wxss */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 40rpx;
+  box-sizing: border-box;
+  background-color: #f8f8f8;
+}
+
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 60rpx 0;
+}
+
+.app-logo {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 24rpx;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6rpx 16rpx rgba(98, 0, 238, 0.3);
+}
+
+.logo-image {
+  width: 100rpx;
+  height: 100rpx;
+}
+
+/* 添加logo文字样式 */
+.logo-text {
+  color: white;
+  font-size: 80rpx;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.app-title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 16rpx;
+}
+
+.app-subtitle {
+  font-size: 28rpx;
+  color: var(--text-secondary-color);
+}
+
+.tab-container {
+  display: flex;
+  position: relative;
+  margin-bottom: 40rpx;
+  border-bottom: 2rpx solid rgba(0, 0, 0, 0.1);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: var(--text-secondary-color);
+  transition: color 0.3s;
+  position: relative;
+}
+
+.tab.active {
+  color: var(--primary-color);
+}
+
+.tab-slider {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  height: 4rpx;
+  background-color: var(--primary-color);
+  transition: left 0.3s ease;
+}
+
+.form-container {
+  padding: 16rpx 0;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.form-container.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.form-container.hide {
+  display: none;
+  opacity: 0;
+  transform: translateY(30rpx);
+}
+
+.form-row {
+  display: flex;
+  margin: 0 -8rpx;
+}
+
+.form-item {
+  padding: 0 8rpx;
+  box-sizing: border-box;
+}
+
+.form-item.half {
+  width: 50%;
+}
+
+.text-field {
+  position: relative;
+  margin-bottom: 32rpx;
+}
+
+.text-field input {
+  width: 100%;
+  height: 90rpx;
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 32rpx;
+  background-color: rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  transition: all 0.3s;
+}
+
+.text-field input:focus {
+  background-color: rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.text-field-label {
+  position: absolute;
+  top: 30rpx;
+  left: 16rpx;
+  font-size: 32rpx;
+  color: var(--text-secondary-color);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.text-field input:not(:placeholder-shown) + .text-field-label,
+.text-field input:focus + .text-field-label {
+  transform: translateY(-24rpx) scale(0.8);
+  color: var(--primary-color);
+  top: 4rpx;
+}
+
+.text-field.optional .text-field-label:after {
+  content: " (可选)";
+  color: var(--text-disabled-color);
+  font-size: 24rpx;
+}
+
+.gender-select {
+  height: 90rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.gender-label {
+  font-size: 28rpx;
+  color: var(--text-secondary-color);
+  margin-bottom: 12rpx;
+}
+
+.radio-group {
+  display: flex;
+}
+
+.radio {
+  margin-right: 24rpx;
+  font-size: 28rpx;
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 24rpx;
+  margin: 8rpx 0 16rpx;
+  min-height: 32rpx;
+}
+
+.btn-login, .btn-register {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  color: white;
+  font-size: 32rpx;
+  letter-spacing: 2rpx;
+  border-radius: 44rpx;
+  margin-top: 16rpx;
+  transition: all 0.3s;
+  background-color: var(--primary-color);
+  box-shadow: 0 4rpx 12rpx rgba(98, 0, 238, 0.3);
+}
+
+.btn-login:active, .btn-register:active {
+  transform: translateY(-2rpx);
+  box-shadow: 0 6rpx 16rpx rgba(98, 0, 238, 0.4);
+}
+
+.login-footer {
+  margin-top: auto;
+  padding: 40rpx 0;
+  text-align: center;
+}
+
+.login-footer text {
+  font-size: 24rpx;
+  color: var(--text-disabled-color);
+} 

@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/stats/stats",
+    "pages/advice/advice",
+    "pages/profile/profile",
+    "pages/index/index",
+    "pages/logs/logs"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "运动手环",
+    "navigationBarBackgroundColor": "#6200EE"
+  },
+  "tabBar": {
+    "color": "#9E9E9E",
+    "selectedColor": "#6200EE",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/stats/stats",
+        "text": "数据统计",
+        "iconPath": "images/stats.png",
+        "selectedIconPath": "images/stats_selected.png"
+      },
+      {
+        "pagePath": "pages/advice/advice",
+        "text": "建议",
+        "iconPath": "images/advice.png",
+        "selectedIconPath": "images/advice_selected.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/profile.png",
+        "selectedIconPath": "images/profile_selected.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}
