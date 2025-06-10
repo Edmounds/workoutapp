@@ -146,4 +146,40 @@ export function getDeepseekApiUsage(apiKey, apiBaseUrl = 'https://api.deepseek.c
   });
 }
 
+// 设备管理相关API
+// 获取所有设备列表
+export function getDevices(params) {
+  return api.get('/admin/devices', { params })
+}
+
+// 添加新设备
+export function addDevice(data) {
+  return api.post('/admin/devices', data)
+}
+
+// 批量添加设备
+export function batchAddDevices(data) {
+  return api.post('/admin/devices/batch', data)
+}
+
+// 修改设备信息
+export function updateDevice(deviceId, data) {
+  return api.put(`/admin/devices/${deviceId}`, data)
+}
+
+// 删除设备
+export function deleteDevice(deviceId) {
+  return api.delete(`/admin/devices/${deviceId}`)
+}
+
+// 重置设备密钥
+export function resetDeviceSecret(deviceId) {
+  return api.post(`/admin/devices/${deviceId}/reset_secret`)
+}
+
+// 获取设备统计数据
+export function getDevicesStats() {
+  return api.get('/admin/stats/devices')
+}
+
 export default api 

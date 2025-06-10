@@ -60,6 +60,7 @@ const user = computed(() => {
 const menuItems = [
   { title: '概览仪表板', icon: 'mdi-view-dashboard', path: '/' },
   { title: '用户管理', icon: 'mdi-account-group', path: '/users' },
+  { title: '设备管理', icon: 'mdi-watch-variant', path: '/devices' },
   { title: '运动统计', icon: 'mdi-chart-line', path: '/statistics' },
   { title: '健康数据', icon: 'mdi-heart-pulse', path: '/health' },
   { title: 'API使用统计', icon: 'mdi-key-variant', path: '/aitoken' }

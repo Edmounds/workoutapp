@@ -43,6 +43,12 @@ const router = createRouter({
       name: 'aitoken',
       component: () => import('../views/AitokenView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/devices',
+      name: 'devices',
+      component: () => import('../views/DevicesView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })
