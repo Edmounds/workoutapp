@@ -58,28 +58,6 @@
     </view>
   </view>
 
-  <!-- 成就卡片 -->
-  <view class="profile-section card">
-    <view class="section-header">
-      <text class="section-title">我的成就</text>
-    </view>
-    <view class="achievement-list" wx:if="{{achievements.length > 0}}">
-      <view class="achievement-item" wx:for="{{achievements}}" wx:key="id">
-        <view class="achievement-icon">
-          <text>🏆</text>
-        </view>
-        <view class="achievement-details">
-          <text class="achievement-title">{{item.title}}</text>
-          <text class="achievement-desc">{{item.description}}</text>
-          <text class="achievement-date">{{item.date}}</text>
-        </view>
-      </view>
-    </view>
-    <view class="no-data" wx:else>
-      <text>暂无成就记录</text>
-    </view>
-  </view>
-
   <!-- 设置列表 -->
   <view class="profile-section card">
     <view class="section-header">

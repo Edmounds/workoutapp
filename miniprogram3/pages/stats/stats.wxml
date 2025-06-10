@@ -26,10 +26,23 @@
     </view>
   </view>
 
-  <!-- 运动数据图表 -->
+  <!-- 图表类型切换 -->
+  <view class="chart-type-tabs">
+    <view class="chart-tab {{chartType === 'line' ? 'active' : ''}}" bindtap="switchChartType" data-type="line">
+      <text>折线图</text>
+    </view>
+    <view class="chart-tab {{chartType === 'column' ? 'active' : ''}}" bindtap="switchChartType" data-type="bar">
+      <text>柱状图</text>
+    </view>
+    <view class="chart-tab {{chartType === 'pie' ? 'active' : ''}}" bindtap="switchChartType" data-type="pie">
+      <text>饼图</text>
+    </view>
+  </view>
+
+  <!-- 距离数据图表 -->
   <view class="stat-card card">
     <view class="card-header">
-      <text class="card-title">跑步数据</text>
+      <text class="card-title">跑步距离</text>
       <view class="card-filter">
         <text class="{{timeRange === 'week' ? 'active' : ''}}" bindtap="switchTimeRange" data-range="week">周</text>
         <text class="{{timeRange === 'month' ? 'active' : ''}}" bindtap="switchTimeRange" data-range="month">月</text>
@@ -37,8 +50,30 @@
       </view>
     </view>
     <view class="chart-container">
-      <!-- 使用wx-canvas绘制图表 -->
-      <canvas canvas-id="runningChart" class="chart-canvas" bindtouchstart="touchHandler"></canvas>
+      <!-- 使用原生canvas -->
+      <canvas canvas-id="distanceCanvas" id="distanceCanvas" class="chart-canvas" bindtouchstart="touchDistanceChart" bindtouchmove="touchDistanceChart" bindtouchend="touchDistanceChart"></canvas>
+    </view>
+  </view>
+
+  <!-- 时长图表 -->
+  <view class="stat-card card">
+    <view class="card-header">
+      <text class="card-title">运动时长</text>
+    </view>
+    <view class="chart-container">
+      <!-- 时长图表 -->
+      <canvas canvas-id="durationCanvas" id="durationCanvas" class="chart-canvas" bindtouchstart="touchDurationChart" bindtouchmove="touchDurationChart" bindtouchend="touchDurationChart"></canvas>
+    </view>
+  </view>
+
+  <!-- 卡路里图表 -->
+  <view class="stat-card card">
+    <view class="card-header">
+      <text class="card-title">消耗卡路里</text>
+    </view>
+    <view class="chart-container">
+      <!-- 卡路里图表 -->
+      <canvas canvas-id="caloriesCanvas" id="caloriesCanvas" class="chart-canvas" bindtouchstart="touchCaloriesChart" bindtouchmove="touchCaloriesChart" bindtouchend="touchCaloriesChart"></canvas>
     </view>
   </view>
 

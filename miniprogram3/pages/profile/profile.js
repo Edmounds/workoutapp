@@ -25,11 +25,8 @@ Page({
     // BMI值
     bmi: '',
     
-    // 成就列表
-    achievements: [],
-    
-    // 格式化后的总时长
-    formattedDuration: '0h'
+    // 总运动时长
+    formattedDuration: '0h 0m',
   },
 
   /**
@@ -94,6 +91,7 @@ Page({
       .then(res => {
         if (res.code === 200) {
           const userInfo = res.data.user_info;
+          console.log('用户信息获取成功:', res.data);
           
           // 计算BMI
           let bmi = '';
@@ -296,5 +294,16 @@ Page({
   onPullDownRefresh: function () {
     this.loadUserInfo();
     wx.stopPullDownRefresh();
-  }
+  },
+
+  /**
+   * 格式化运动时长
+   * @param {number} durationInSeconds - 总秒数
+   */
+  formatDuration: function(durationInSeconds) {
+    if (!durationInSeconds) return '0h 0m';
+    const hours = Math.floor(durationInSeconds / 3600);
+    const minutes = Math.floor((durationInSeconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  },
 }); 

@@ -41,124 +41,141 @@
 
   <!-- 训练计划建议 -->
   <view class="advice-content {{activeTab === 'training' ? 'show' : 'hide'}}">
-    <view class="advice-card card">
-      <view class="card-header">
-        <text class="card-title">本周训练计划</text>
-        <text class="card-date">{{currentDate}}</text>
-      </view>
-      <view class="advice-list">
-        <view wx:if="{{!fitnessAdvice.weekly_plan || fitnessAdvice.weekly_plan.length === 0}}" class="no-data">
-          <text>暂无训练计划建议</text>
+    <view wx:if="{{fitnessAdviceError}}" class="error-container">
+      <text class="error-text">{{fitnessAdviceError}}</text>
+      <button class="retry-button" bindtap="refreshAdvice">重试</button>
+    </view>
+    <block wx:else>
+      <view class="advice-card card">
+        <view class="card-header">
+          <text class="card-title">本周训练计划</text>
+          <text class="card-date">{{currentDate}}</text>
         </view>
-        <view wx:else>
-          <view class="advice-item" wx:for="{{fitnessAdvice.weekly_plan}}" wx:key="day">
-            <view class="advice-day">{{item.day}}</view>
-            <view class="advice-detail">
-              <view class="advice-type">{{item.workout_type}}</view>
-              <view class="advice-desc">{{item.description}}</view>
-              <view class="advice-metrics">
-                <text>{{item.distance}}km</text>
-                <text class="dot">·</text>
-                <text>{{item.duration}}分钟</text>
-                <text class="dot">·</text>
-                <text>{{item.intensity}}</text>
+        <view class="advice-list">
+          <view wx:if="{{!fitnessAdvice.weekly_plan || fitnessAdvice.weekly_plan.length === 0}}" class="no-data">
+            <text>暂无训练计划建议</text>
+          </view>
+          <view wx:else>
+            <view class="advice-item" wx:for="{{fitnessAdvice.weekly_plan}}" wx:key="day">
+              <view class="advice-day">{{item.day}}</view>
+              <view class="advice-detail">
+                <view class="advice-type">{{item.workout_type}}</view>
+                <view class="advice-desc">{{item.description}}</view>
+                <view class="advice-metrics">
+                  <text>{{item.distance}}km</text>
+                  <text class="dot">·</text>
+                  <text>{{item.duration}}分钟</text>
+                  <text class="dot">·</text>
+                  <text>{{item.intensity}}</text>
+                </view>
               </view>
             </view>
           </view>
         </view>
       </view>
-    </view>
 
-    <view class="advice-card card">
-      <view class="card-header">
-        <text class="card-title">训练建议</text>
-      </view>
-      <view class="advice-content-text">
-        <text>{{fitnessAdvice.general_advice || '根据您的运动数据，我们将为您提供个性化的训练建议。请保持运动记录的更新，以获取更准确的建议。'}}</text>
-      </view>
-      <view class="advice-tips">
-        <view class="tip-item" wx:for="{{fitnessAdvice.tips || []}}" wx:key="index">
-          <view class="tip-icon">💡</view>
-          <view class="tip-text">{{item}}</view>
+      <view class="advice-card card">
+        <view class="card-header">
+          <text class="card-title">训练建议</text>
+        </view>
+        <view class="advice-content-text">
+          <rich-text nodes="{{fitnessAdviceNodes}}"></rich-text>
+        </view>
+        <view class="advice-tips">
+          <view class="tip-item" wx:for="{{fitnessAdvice.tips || []}}" wx:key="index">
+            <view class="tip-icon">💡</view>
+            <view class="tip-text">{{item}}</view>
+          </view>
         </view>
       </view>
-    </view>
+    </block>
   </view>
 
   <!-- 营养建议 -->
   <view class="advice-content {{activeTab === 'nutrition' ? 'show' : 'hide'}}">
-    <view class="advice-card card">
-      <view class="card-header">
-        <text class="card-title">营养摄入建议</text>
-      </view>
-      <view class="nutrition-summary">
-        <view class="nutrition-item">
-          <view class="nutrition-value">{{nutritionAdvice.calories || 2000}}kcal</view>
-          <view class="nutrition-label">每日热量</view>
-        </view>
-        <view class="nutrition-item">
-          <view class="nutrition-value">{{nutritionAdvice.protein || 100}}g</view>
-          <view class="nutrition-label">蛋白质</view>
-        </view>
-        <view class="nutrition-item">
-          <view class="nutrition-value">{{nutritionAdvice.carbs || 250}}g</view>
-          <view class="nutrition-label">碳水</view>
-        </view>
-        <view class="nutrition-item">
-          <view class="nutrition-value">{{nutritionAdvice.fat || 60}}g</view>
-          <view class="nutrition-label">脂肪</view>
-        </view>
-      </view>
+    <view wx:if="{{nutritionAdviceError}}" class="error-container">
+      <text class="error-text">{{nutritionAdviceError}}</text>
+      <button class="retry-button" bindtap="refreshAdvice">重试</button>
     </view>
-
-    <view class="advice-card card">
-      <view class="card-header">
-        <text class="card-title">饮食建议</text>
-      </view>
-      <view class="advice-content-text">
-        <text>{{nutritionAdvice.general_advice || '根据您的运动数据和身体状况，我们为您提供以下营养建议，帮助您达到最佳训练效果和身体状态。'}}</text>
-      </view>
-      
-      <view class="meal-plans">
-        <view class="meal-section">
-          <view class="meal-title">早餐</view>
-          <view class="meal-items">
-            <text>{{nutritionAdvice.breakfast || '全麦面包、鸡蛋、牛奶和水果'}}</text>
-          </view>
+    <block wx:else>
+      <view class="advice-card card">
+        <view class="card-header">
+          <text class="card-title">营养摄入建议</text>
         </view>
-        <view class="meal-section">
-          <view class="meal-title">午餐</view>
-          <view class="meal-items">
-            <text>{{nutritionAdvice.lunch || '糙米饭、鸡胸肉、蔬菜沙拉'}}</text>
+        <view class="nutrition-summary">
+          <view class="nutrition-item">
+            <view class="nutrition-value">{{nutritionAdvice.calories || 2000}}kcal</view>
+            <view class="nutrition-label">每日热量</view>
           </view>
-        </view>
-        <view class="meal-section">
-          <view class="meal-title">晚餐</view>
-          <view class="meal-items">
-            <text>{{nutritionAdvice.dinner || '鱼肉、蔬菜、少量碳水化合物'}}</text>
+          <view class="nutrition-item">
+            <view class="nutrition-value">{{nutritionAdvice.protein || 100}}g</view>
+            <view class="nutrition-label">蛋白质</view>
           </view>
-        </view>
-        <view class="meal-section">
-          <view class="meal-title">加餐</view>
-          <view class="meal-items">
-            <text>{{nutritionAdvice.snacks || '坚果、酸奶或水果'}}</text>
+          <view class="nutrition-item">
+            <view class="nutrition-value">{{nutritionAdvice.carbs || 250}}g</view>
+            <view class="nutrition-label">碳水</view>
+          </view>
+          <view class="nutrition-item">
+            <view class="nutrition-value">{{nutritionAdvice.fat || 60}}g</view>
+            <view class="nutrition-label">脂肪</view>
           </view>
         </view>
       </view>
 
-      <view class="advice-tips">
-        <view class="tip-item" wx:for="{{nutritionAdvice.tips || []}}" wx:key="index">
-          <view class="tip-icon">💡</view>
-          <view class="tip-text">{{item}}</view>
+      <view class="advice-card card">
+        <view class="card-header">
+          <text class="card-title">饮食建议</text>
+        </view>
+        <view class="advice-content-text">
+          <rich-text nodes="{{nutritionAdviceNodes}}"></rich-text>
+        </view>
+        
+        <view class="meal-plans">
+          <view class="meal-section">
+            <view class="meal-title">早餐</view>
+            <view class="meal-items">
+              <text>{{nutritionAdvice.breakfast || '全麦面包、鸡蛋、牛奶和水果'}}</text>
+            </view>
+          </view>
+          <view class="meal-section">
+            <view class="meal-title">午餐</view>
+            <view class="meal-items">
+              <text>{{nutritionAdvice.lunch || '糙米饭、鸡胸肉、蔬菜沙拉'}}</text>
+            </view>
+          </view>
+          <view class="meal-section">
+            <view class="meal-title">晚餐</view>
+            <view class="meal-items">
+              <text>{{nutritionAdvice.dinner || '鱼肉、蔬菜、少量碳水化合物'}}</text>
+            </view>
+          </view>
+          <view class="meal-section">
+            <view class="meal-title">加餐</view>
+            <view class="meal-items">
+              <text>{{nutritionAdvice.snacks || '坚果、酸奶或水果'}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="advice-tips">
+          <view class="tip-item" wx:for="{{nutritionAdvice.tips || []}}" wx:key="index">
+            <view class="tip-icon">💡</view>
+            <view class="tip-text">{{item}}</view>
+          </view>
         </view>
       </view>
-    </view>
+    </block>
   </view>
 
   <!-- 刷新按钮 -->
   <view class="refresh-button" bindtap="refreshAdvice" hidden="{{isLoading}}">
     <text class="refresh-icon">↻</text>
     <text>更新建议</text>
+  </view>
+
+  <!-- 在页面底部添加设置API密钥按钮 -->
+  <view class="settings-section">
+    <button class="btn-secondary" bindtap="setApiKey">设置DeepSeek API密钥</button>
   </view>
 </view>
 

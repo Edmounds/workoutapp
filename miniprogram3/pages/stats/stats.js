@@ -1,15 +1,11 @@
 // stats.js
 const api = require('../../utils/api.js');
 const util = require('../../utils/util.js');
+// 导入自定义图表库
+const Charts = require('../../utils/charts.js');
 
-// 引入图表绘制库（wxcharts）
-// 注意：需要先引入wxcharts库，这里假设已经安装
-let wxCharts = null;
-try {
-  wxCharts = require('../../utils/wxcharts.js');
-} catch (error) {
-  console.error('请先安装wxcharts库，或者引入正确的路径');
-}
+// 定义全局变量
+var _self;
 
 Page({
   /**
@@ -19,6 +15,7 @@ Page({
     isLoading: true,
     currentDate: '',
     timeRange: 'week',  // 时间范围：week, month, year
+    chartType: 'line',  // 图表类型：line, column, pie
     
     // 用户信息
     userInfo: {},
@@ -29,24 +26,24 @@ Page({
     // 运动记录
     runningRecords: [],
     
-    // 图表数据
-    chartData: {
-      week: [],
-      month: [],
-      year: []
-    },
+    // 原始跑步记录
+    allRunningRecords: [],
     
-    // 图表实例
-    runningChart: null
+    // 图表尺寸
+    cWidth: 0,
+    cHeight: 0
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    // 设置当前日期
+    _self = this;
+    // 获取窗口尺寸用于图表绘制
     this.setData({
-      currentDate: util.formatTime(new Date(), 'yyyy-MM-dd')
+      currentDate: util.formatTime(new Date(), 'yyyy-MM-dd'),
+      cWidth: wx.getSystemInfoSync().windowWidth,
+      cHeight: 200
     });
   },
 
@@ -54,19 +51,20 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow: function () {
-    this.checkLogin();
-    this.loadData();
+    this.checkLoginAndLoadData();
   },
 
   /**
    * 检查用户是否登录
    */
-  checkLogin: function() {
+  checkLoginAndLoadData: function() {
     const token = wx.getStorageSync('token');
     if (!token) {
-      wx.redirectTo({
+      wx.reLaunch({
         url: '/pages/login/login'
       });
+    } else {
+      this.loadData();
     }
   },
 
@@ -77,95 +75,68 @@ Page({
     this.setData({ isLoading: true });
     
     // 获取用户信息
-    const userInfoPromise = api.getUserInfo()
-      .then(res => {
-        if (res.code === 200) {
-          this.setData({
-            userInfo: res.data.user_info
-          });
+    api.getUserInfo()
+      .then(userInfoRes => {
+        if (userInfoRes.code === 200) {
+          this.setData({ userInfo: userInfoRes.data.user_info });
         } else {
           util.showToast('获取用户信息失败');
         }
+        return api.getPhysicalStats();
       })
-      .catch(err => {
-        console.error('获取用户信息异常:', err);
-      });
-    
-    // 获取体能数据
-    const statsPromise = api.getPhysicalStats()
-      .then(res => {
-        if (res.code === 200) {
-          this.setData({
-            physicalStats: res.data
-          });
+      .then(statsRes => {
+        if (statsRes.code === 200) {
+          this.setData({ physicalStats: statsRes.data });
         } else {
           util.showToast('获取体能数据失败');
         }
+        return api.getRunningRecords();
       })
-      .catch(err => {
-        console.error('获取体能数据异常:', err);
-      });
-    
-    // 获取跑步记录
-    const recordsPromise = api.getRunningRecords()
-      .then(res => {
-        if (res.code === 200) {
-          // 只显示最近3条数据
-          const recentRecords = res.data.slice(0, 3);
-          
-          this.setData({
-            runningRecords: recentRecords
+      .then(recordsRes => {
+        if (recordsRes.code === 200) {
+          const records = recordsRes.data || [];
+          // 按时间降序排序
+          records.sort(function(a, b) {
+            return new Date(b.start_time) - new Date(a.start_time);
           });
           
-          // 处理图表数据
-          this.processChartData(res.data);
+          this.setData({
+            allRunningRecords: records,
+            isLoading: false
+          });
+          
+          this.updateRecentRecords();
+          this.updateAllCharts();
         } else {
           util.showToast('获取跑步记录失败');
+          this.setData({ isLoading: false });
         }
       })
       .catch(err => {
-        console.error('获取跑步记录异常:', err);
-      });
-    
-    // 所有数据加载完成后
-    Promise.all([userInfoPromise, statsPromise, recordsPromise])
-      .then(() => {
-        this.setData({ isLoading: false });
-        this.initChart();
-      })
-      .catch(err => {
-        this.setData({ isLoading: false });
         console.error('数据加载异常:', err);
+        util.showToast('数据加载失败，请稍后重试');
+        this.setData({ isLoading: false });
       });
   },
 
-  /**
-   * 处理图表数据
-   * @param {Array} records - 跑步记录数组
-   */
-  processChartData: function(records) {
-    if (!records || records.length === 0) return;
+  updateRecentRecords: function() {
+    const recentRecords = [];
+    const allRecords = this.data.allRunningRecords;
     
-    // 按日期排序
-    records.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    // 只取前3条记录
+    for (let i = 0; i < Math.min(3, allRecords.length); i++) {
+      const record = allRecords[i];
+      recentRecords.push({
+        id: record.id,
+        start_time: util.formatTime(new Date(record.start_time.replace(/-/g, '/')), 'yyyy-MM-dd hh:mm'),
+        workout_type: record.workout_type || '跑步',
+        distance_km: record.distance ? (record.distance / 1000).toFixed(2) : '0',
+        duration_minutes: record.duration ? Math.round(record.duration / 60) : '0',
+        avg_pace_formatted: record.avg_pace ? util.formatPace(record.avg_pace) : '--'
+      });
+    }
     
-    // 当前日期
-    const now = new Date();
-    
-    // 处理周数据（最近7天）
-    const weekData = this.getDataForRange(records, 7);
-    
-    // 处理月数据（最近30天）
-    const monthData = this.getDataForRange(records, 30);
-    
-    // 处理年数据（最近12个月）
-    const yearData = this.getDataForRange(records, 365, 'month');
-    
-    this.setData({
-      'chartData.week': weekData,
-      'chartData.month': monthData,
-      'chartData.year': yearData
-    });
+    this.setData({ runningRecords: recentRecords });
   },
 
   /**
@@ -173,23 +144,28 @@ Page({
    * @param {Array} records - 跑步记录数组
    * @param {Number} days - 天数
    * @param {String} groupBy - 分组方式：'day' 或 'month'
+   * @param {String} dataKey - 数据字段名
    * @return {Object} 图表数据对象
    */
-  getDataForRange: function(records, days, groupBy = 'day') {
+  getDataForRange: function(records, days, groupBy, dataKey) {
     const now = new Date();
     const startDate = new Date();
     startDate.setDate(now.getDate() - days);
     
     // 过滤在时间范围内的记录
-    const filteredRecords = records.filter(record => {
-      const recordDate = new Date(record.start_time);
-      return recordDate >= startDate && recordDate <= now;
-    });
+    const filteredRecords = [];
+    for (let i = 0; i < records.length; i++) {
+      const recordDate = new Date(records[i].start_time.replace(/-/g, '/'));
+      if (recordDate >= startDate && recordDate <= now) {
+        filteredRecords.push(records[i]);
+      }
+    }
     
     // 按日期分组汇总数据
     const groupedData = {};
-    filteredRecords.forEach(record => {
-      const recordDate = new Date(record.start_time);
+    for (let i = 0; i < filteredRecords.length; i++) {
+      const record = filteredRecords[i];
+      const recordDate = new Date(record.start_time.replace(/-/g, '/'));
       let key;
       
       if (groupBy === 'day') {
@@ -199,113 +175,246 @@ Page({
       }
       
       if (!groupedData[key]) {
-        groupedData[key] = {
-          distance: 0,
-          count: 0
-        };
+        groupedData[key] = { value: 0 };
       }
       
-      groupedData[key].distance += record.distance_km || 0;
-      groupedData[key].count += 1;
-    });
+      let value = Number(record[dataKey] || 0);
+      
+      // 处理距离数据，将米转换为公里
+      if (dataKey === 'distance') {
+        value = value / 1000;
+      }
+      
+      // 处理时长数据，将秒转换为分钟
+      if (dataKey === 'duration') {
+        value = value / 60;
+      }
+      
+      groupedData[key].value += value;
+    }
     
     // 格式化为图表所需数据格式
     const categories = [];
-    const distanceSeries = [];
+    const seriesData = [];
+    const daysInScope = groupBy === 'day' ? days : 12;
+    const unit = groupBy === 'day' ? 'day' : 'month';
     
-    // 确保有完整的数据点
-    if (groupBy === 'day') {
-      for (let i = 0; i < days; i++) {
-        const date = new Date();
-        date.setDate(now.getDate() - (days - 1) + i);
-        const key = util.formatTime(date, 'MM-dd');
-        
-        categories.push(key);
-        distanceSeries.push((groupedData[key] && groupedData[key].distance) || 0);
-      }
-    } else {
-      for (let i = 0; i < 12; i++) {
-        const date = new Date();
-        date.setMonth(now.getMonth() - (11 - i));
-        const key = util.formatTime(date, 'yyyy-MM');
-        
+    for (let i = 0; i < daysInScope; i++) {
+      const date = new Date();
+      if (unit === 'day') {
+        date.setDate(now.getDate() - (daysInScope - 1) + i);
+        categories.push(util.formatTime(date, 'MM-dd'));
+      } else {
+        date.setMonth(now.getMonth() - (daysInScope - 1) + i);
         categories.push(util.formatTime(date, 'MM月'));
-        distanceSeries.push((groupedData[key] && groupedData[key].distance) || 0);
       }
+      const key = util.formatTime(date, unit === 'day' ? 'MM-dd' : 'yyyy-MM');
+      seriesData.push(groupedData[key] ? Number(groupedData[key].value.toFixed(2)) : 0);
     }
     
-    return {
-      categories,
+    // 生成系列数据
+    const name = dataKey === 'distance' ? '跑步距离 (km)' : 
+                 dataKey === 'duration' ? '运动时长 (min)' : '消耗热量 (kcal)';
+    const color = dataKey === 'distance' ? '#1976D2' : 
+                  dataKey === 'duration' ? '#FF5722' : '#4CAF50';
+    
+    return { 
+      categories: categories, 
       series: [{
-        name: '里程(km)',
-        data: distanceSeries,
-        color: '#6200EE'
+        name: name,
+        data: seriesData,
+        color: color
       }]
     };
   },
 
   /**
-   * 初始化图表
+   * 切换图表类型
    */
-  initChart: function() {
-    if (!wxCharts) {
-      console.error('wxCharts 未正确加载');
-      return;
-    }
-    
-    const data = this.data.chartData[this.data.timeRange];
-    if (!data || !data.categories || data.categories.length === 0) {
-      console.log('没有足够的图表数据');
-      return;
-    }
-    
-    try {
-      // 图表配置
-      const chartConfig = {
-        canvasId: 'runningChart',
-        type: 'line',
-        categories: data.categories,
-        series: data.series,
-        width: wx.getSystemInfoSync().windowWidth * 0.88,
-        height: 200,
-        dataLabel: false,
-        dataPointShape: true,
-        legend: false,
-        xAxis: {
-          disableGrid: true
-        },
-        yAxis: {
-          title: '里程(km)',
-          format: (val) => val.toFixed(1)
-        },
-        extra: {
-          lineStyle: 'curve'
-        }
-      };
-      
-      // 创建图表实例
-      this.runningChart = new wxCharts(chartConfig);
-    } catch (error) {
-      console.error('创建图表失败:', error);
-    }
+  switchChartType: function(e) {
+    // 将bar改为column以匹配图表库的类型命名
+    var type = e.currentTarget.dataset.type === 'bar' ? 'column' : e.currentTarget.dataset.type;
+    this.setData({
+      chartType: type
+    });
+    this.updateAllCharts();
   },
 
   /**
    * 切换时间范围
    */
   switchTimeRange: function(e) {
-    const range = e.currentTarget.dataset.range;
-    this.setData({ timeRange: range });
-    
-    // 更新图表
-    if (this.runningChart) {
-      const data = this.data.chartData[range];
-      if (data && data.categories) {
-        this.runningChart.updateData({
-          categories: data.categories,
-          series: data.series
-        });
-      }
+    this.setData({
+      timeRange: e.currentTarget.dataset.range
+    });
+    this.updateAllCharts();
+  },
+
+  /**
+   * 初始化所有图表
+   */
+  initAllCharts: function() {
+    // 根据当前选择的时间范围初始化图表
+    const chartData = this.data.chartData[this.data.timeRange];
+    console.log('图表数据:', chartData);
+    if (chartData && chartData.length > 0) {
+      setTimeout(() => {
+        this.initDistanceChart('distanceCanvas');
+        this.initDurationChart('durationCanvas');
+        this.initCaloriesChart('caloriesCanvas');
+      }, 100);
+    } else {
+      console.log('暂无数据，无法初始化图表');
+    }
+  },
+
+  /**
+   * 初始化距离图表
+   */
+  initDistanceChart: function(canvasId) {
+    try {
+      const chartData = this.data.chartData[this.data.timeRange];
+      
+      // 准备图表数据
+      const categories = chartData.map(item => item.label);
+      const series = [{
+        name: '距离(公里)',
+        data: chartData.map(item => Number(item.distance_km) || 0),
+        color: '#1976D2'
+      }];
+      
+      // 图表配置
+      const opts = {
+        canvasId: canvasId,
+        type: this.data.chartType === 'bar' ? 'column' : this.data.chartType,
+        categories: categories,
+        series: series,
+        animation: true,
+        background: '#FFFFFF',
+        padding: [15, 15, 0, 15],
+        xAxis: {
+          disableGrid: true
+        },
+        yAxis: {
+          title: '公里',
+          format: (val) => val.toFixed(1)
+        },
+        dataLabel: true,
+        width: wx.getSystemInfoSync().windowWidth * 0.9,
+        height: 200,
+        extra: {
+          column: {
+            width: 20
+          }
+        }
+      };
+      
+      console.log('初始化距离图表:', opts);
+      
+      // 初始化图表
+      chartUtil.initChart(canvasId, opts, this);
+    } catch (error) {
+      console.error('初始化距离图表错误:', error);
+    }
+  },
+  
+  /**
+   * 初始化时长图表
+   */
+  initDurationChart: function(canvasId) {
+    try {
+      const chartData = this.data.chartData[this.data.timeRange];
+      
+      // 准备图表数据
+      const categories = chartData.map(item => item.label);
+      const series = [{
+        name: '时长(分钟)',
+        data: chartData.map(item => Number(item.duration_minutes) || 0),
+        color: '#FF5722'
+      }];
+      
+      // 图表配置
+      const opts = {
+        canvasId: canvasId,
+        type: this.data.chartType === 'bar' ? 'column' : this.data.chartType,
+        categories: categories,
+        series: series,
+        animation: true,
+        background: '#FFFFFF',
+        padding: [15, 15, 0, 15],
+        xAxis: {
+          disableGrid: true
+        },
+        yAxis: {
+          title: '分钟',
+          format: (val) => val.toFixed(0)
+        },
+        dataLabel: true,
+        width: wx.getSystemInfoSync().windowWidth * 0.9,
+        height: 200,
+        extra: {
+          column: {
+            width: 20
+          }
+        }
+      };
+      
+      console.log('初始化时长图表:', opts);
+      
+      // 初始化图表
+      chartUtil.initChart(canvasId, opts, this);
+    } catch (error) {
+      console.error('初始化时长图表错误:', error);
+    }
+  },
+  
+  /**
+   * 初始化卡路里图表
+   */
+  initCaloriesChart: function(canvasId) {
+    try {
+      const chartData = this.data.chartData[this.data.timeRange];
+      
+      // 准备图表数据
+      const categories = chartData.map(item => item.label);
+      const series = [{
+        name: '卡路里(千卡)',
+        data: chartData.map(item => Number(item.calories) || 0),
+        color: '#4CAF50'
+      }];
+      
+      // 图表配置
+      const opts = {
+        canvasId: canvasId,
+        type: this.data.chartType === 'bar' ? 'column' : this.data.chartType,
+        categories: categories,
+        series: series,
+        animation: true,
+        background: '#FFFFFF',
+        padding: [15, 15, 0, 15],
+        xAxis: {
+          disableGrid: true
+        },
+        yAxis: {
+          title: '千卡',
+          format: (val) => val.toFixed(0)
+        },
+        dataLabel: true,
+        width: wx.getSystemInfoSync().windowWidth * 0.9,
+        height: 200,
+        extra: {
+          column: {
+            width: 20
+          }
+        }
+      };
+      
+      console.log('初始化卡路里图表:', opts);
+      
+      // 初始化图表
+      chartUtil.initChart(canvasId, opts, this);
+    } catch (error) {
+      console.error('初始化卡路里图表错误:', error);
     }
   },
 
@@ -314,7 +423,10 @@ Page({
    */
   viewAllRecords: function() {
     wx.navigateTo({
-      url: '/pages/records/records'
+      url: '/pages/records/records',
+      fail: function() {
+        util.showToast('页面不存在');
+      }
     });
   },
 
@@ -322,30 +434,102 @@ Page({
    * 查看记录详情
    */
   viewRecordDetail: function(e) {
-    const id = e.currentTarget.dataset.id;
+    var id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/pages/record-detail/record-detail?id=${id}`
+      url: '/pages/recordDetail/recordDetail?id=' + id,
+      fail: function() {
+        util.showToast('页面不存在');
+      }
     });
-  },
-
-  /**
-   * 图表触摸事件处理
-   */
-  touchHandler: function(e) {
-    if (this.runningChart) {
-      this.runningChart.showToolTip(e, {
-        format: (item, category) => {
-          return category + ': ' + item.data + 'km'
-        }
-      });
-    }
   },
 
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */
-  onPullDownRefresh: function () {
+  onPullDownRefresh: function() {
     this.loadData();
     wx.stopPullDownRefresh();
+    util.showToast('数据已更新', 'success');
+  },
+
+  updateAllCharts: function() {
+    var timeRange = this.data.timeRange;
+    var allRunningRecords = this.data.allRunningRecords;
+    var days, groupBy;
+
+    switch (timeRange) {
+      case 'year':
+        days = 365;
+        groupBy = 'month';
+        break;
+      case 'month':
+        days = 30;
+        groupBy = 'day';
+        break;
+      case 'week':
+      default:
+        days = 7;
+        groupBy = 'day';
+        break;
+    }
+
+    var distanceData = this.getDataForRange(allRunningRecords, days, groupBy, 'distance');
+    var durationData = this.getDataForRange(allRunningRecords, days, groupBy, 'duration');
+    var caloriesData = this.getDataForRange(allRunningRecords, days, groupBy, 'calories');
+
+    // 使用自定义图表库绘制图表
+    this.drawCharts(distanceData, durationData, caloriesData);
+  },
+
+  // 绘制所有图表
+  drawCharts: function(distanceData, durationData, caloriesData) {
+    const chartType = this.data.chartType;
+    const options = {
+      width: this.data.cWidth,
+      height: this.data.cHeight,
+      padding: [15, 15, 30, 40],
+      background: '#FFFFFF',
+      fontSize: 11
+    };
+    
+    // 使用自定义图表库绘制图表
+    switch(chartType) {
+      case 'column':
+        Charts.drawBarChart('distanceCanvas', distanceData, options, this);
+        Charts.drawBarChart('durationCanvas', durationData, options, this);
+        Charts.drawBarChart('caloriesCanvas', caloriesData, options, this);
+        break;
+      case 'pie':
+        Charts.drawPieChart('distanceCanvas', distanceData, options, this);
+        Charts.drawPieChart('durationCanvas', durationData, options, this);
+        Charts.drawPieChart('caloriesCanvas', caloriesData, options, this);
+        break;
+      case 'line':
+      default:
+        Charts.drawLineChart('distanceCanvas', distanceData, options, this);
+        Charts.drawLineChart('durationCanvas', durationData, options, this);
+        Charts.drawLineChart('caloriesCanvas', caloriesData, options, this);
+        break;
+    }
+  },
+
+  // 图表交互事件处理
+  touchDistanceChart: function(e) {
+    // 这个版本的图表库不支持交互，但保留事件处理器保持接口一致
+    console.log('Chart touched:', e);
+  },
+
+  touchDurationChart: function(e) {
+    // 这个版本的图表库不支持交互，但保留事件处理器保持接口一致
+    console.log('Chart touched:', e);
+  },
+
+  touchCaloriesChart: function(e) {
+    // 这个版本的图表库不支持交互，但保留事件处理器保持接口一致
+    console.log('Chart touched:', e);
+  },
+
+  onChartComplete(e) {
+    console.log('图表渲染完成:', e.detail);
   }
 }); 
