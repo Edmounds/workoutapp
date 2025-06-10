@@ -1,4 +1,0 @@
-requests==2.31.0
-pymysql==1.1.0
-colorama==0.4.6
-unittest2==1.1.0 

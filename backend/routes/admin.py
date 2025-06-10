@@ -638,7 +638,7 @@ def get_user_running_records(current_admin_id, user_id):
             SELECT id, workout_type, start_time, 
                    ROUND(duration/60, 1) as duration_minutes,
                    ROUND(distance/1000, 2) as distance_km,
-                   CONCAT(FLOOR(avg_pace/60), "'", avg_pace%60, '"') as avg_pace_formatted,
+                   CONCAT(FLOOR(avg_pace/60), "'", avg_pace%%60, '"') as avg_pace_formatted,
                    avg_heart_rate, calories
             FROM running_records
             {where_clause}
