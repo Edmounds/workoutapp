@@ -6,7 +6,7 @@ import jwt
 from functools import wraps
 from flask import request, jsonify
 from datetime import datetime, timedelta
-from ..config import APP_CONFIG, logger
+from config import APP_CONFIG, logger
 
 
 def token_required(f):

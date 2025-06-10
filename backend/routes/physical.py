@@ -5,10 +5,10 @@
 import traceback
 from flask import Blueprint, jsonify
 import pymysql
-from ..utils.db import get_db_connection
-from ..utils.helpers import decimal_to_float, format_pace
-from ..middleware.auth import token_required
-from ..config import logger
+from utils.db import get_db_connection
+from utils.helpers import decimal_to_float, format_pace
+from middleware.auth import token_required
+from config import logger
 
 physical_bp = Blueprint('physical', __name__, url_prefix='/api/physical')
 

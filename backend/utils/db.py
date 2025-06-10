@@ -3,7 +3,7 @@
 """数据库连接工具"""
 
 import pymysql
-from backend.config import DB_CONFIG, logger
+from config import DB_CONFIG, logger
 
 
 def get_db_connection():

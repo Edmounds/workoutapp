@@ -2,15 +2,23 @@
 # -*- coding: utf-8 -*-
 """主应用入口文件"""
 
+import sys
+import os
+
+# 添加当前目录到Python路径
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 
-from backend.config import APP_CONFIG, DB_CONFIG
-from backend.routes.users import users_bp
-from backend.routes.workouts import workouts_bp
-from backend.routes.physical import physical_bp
-from backend.routes.admin import admin_bp
-from backend.utils.db import get_db_connection
+# 修改导入路径
+from config import APP_CONFIG, DB_CONFIG
+from routes.users import users_bp
+from routes.workouts import workouts_bp
+from routes.physical import physical_bp
+from routes.admin import admin_bp
+from routes.devices import devices_bp
+from utils.db import get_db_connection
 
 # 创建应用实例
 app = Flask(__name__)
@@ -24,6 +32,7 @@ app.register_blueprint(users_bp)
 app.register_blueprint(workouts_bp)
 app.register_blueprint(physical_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(devices_bp)
 
 
 # 健康检查
@@ -73,6 +82,12 @@ if __name__ == '__main__':
     print("  GET  /api/admin/stats/registrations - 用户注册统计")
     print("  GET  /api/admin/stats/active_users - 活跃用户统计")
     print("  GET  /api/admin/dashboard/overview - 系统概况统计")
+    print("  POST /api/devices/bind - 绑定设备")
+    print("  POST /api/devices/unbind - 解除设备绑定")
+    print("  GET  /api/devices/list - 获取用户绑定的设备列表")
+    print("  POST /api/devices/auth - 设备连接认证")
+    print("  POST /api/devices/upload_data - 设备数据上传")
+    print("  PUT  /api/devices/update - 修改设备信息")
     print("  GET  /health - 健康检查")
     print("  GET  /test/db - 测试数据库连接")
     print("=" * 50)

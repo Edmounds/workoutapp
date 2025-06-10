@@ -5,7 +5,7 @@
 import hashlib
 import jwt
 import datetime
-from backend.config import APP_CONFIG
+from config import APP_CONFIG
 
 
 def hash_password(password):

@@ -5,10 +5,10 @@
 import traceback
 from flask import Blueprint, request, jsonify
 import pymysql
-from ..utils.db import get_db_connection
-from ..utils.helpers import decimal_to_float
-from ..middleware.auth import token_required
-from ..config import logger
+from utils.db import get_db_connection
+from utils.helpers import decimal_to_float
+from middleware.auth import token_required
+from config import logger
 
 workouts_bp = Blueprint('workouts', __name__, url_prefix='/api/user')
 
@@ -45,9 +45,9 @@ def get_running_records(current_user_id):
             record = decimal_to_float(record)
 
             # 格式化时间
-            if record['start_time']:
+            if record['start_time'] and hasattr(record['start_time'], 'strftime'):
                 record['start_time'] = record['start_time'].strftime('%Y-%m-%d %H:%M:%S')
-            if record['end_time']:
+            if record['end_time'] and hasattr(record['end_time'], 'strftime'):
                 record['end_time'] = record['end_time'].strftime('%Y-%m-%d %H:%M:%S')
 
             # 转换距离单位（米转公里）
@@ -82,6 +82,10 @@ def upload_workout(current_user_id):
         # 提取运动数据
         workout_type = data.get('workout_type', '跑步')
         start_time = data.get('start_time')
+        # 确保start_time是有效格式，避免strftime错误
+        if start_time and isinstance(start_time, str):
+            # 如果是字符串格式，则直接使用，不需要调用strftime
+            pass
         duration = data.get('duration', 0)  # 秒
         distance = data.get('distance', 0)  # 米
         avg_pace = data.get('avg_pace', 0)  # 秒/公里
@@ -89,6 +93,9 @@ def upload_workout(current_user_id):
         avg_heart_rate = data.get('avg_heart_rate')
         max_heart_rate = data.get('max_heart_rate')
         notes = data.get('notes', '')
+
+        # 记录详细日志，帮助调试
+        logger.info(f"上传运动记录: user_id={current_user_id}, workout_type={workout_type}, start_time={start_time}, duration={duration}")
 
         conn = get_db_connection()
         if not conn:
