@@ -1,7 +1,10 @@
 import axios from 'axios'
 
+// 可配置的API基础URL，如果环境变量中有设置则使用环境变量，否则使用默认值
+const API_BASE_URL = 'https://www.edmounds.top/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
