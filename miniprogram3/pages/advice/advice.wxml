@@ -175,7 +175,7 @@
 
   <!-- 在页面底部添加设置API密钥按钮 -->
   <view class="settings-section">
-    <button class="btn-secondary" bindtap="setApiKey">设置DeepSeek API密钥</button>
+    <button class="btn-secondary" bindtap="setApiKey">使用内置DeepSeek API密钥</button>
   </view>
 </view>
 

@@ -98,3 +98,6 @@ if __name__ == '__main__':
         debug=APP_CONFIG['DEBUG'],
         threaded=APP_CONFIG['THREADED']
     ) 
+
+# 为uWSGI提供application变量
+# application = app 

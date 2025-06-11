@@ -78,7 +78,15 @@ Page({
     api.getUserInfo()
       .then(userInfoRes => {
         if (userInfoRes.code === 200) {
-          this.setData({ userInfo: userInfoRes.data.user_info });
+          // 确保数据类型正确
+          const userInfo = userInfoRes.data.user_info;
+          if (userInfo.total_distance !== undefined) {
+            userInfo.total_distance = parseFloat(userInfo.total_distance) || 0;
+          }
+          if (userInfo.total_workouts !== undefined) {
+            userInfo.total_workouts = parseInt(userInfo.total_workouts) || 0;
+          }
+          this.setData({ userInfo: userInfo });
         } else {
           util.showToast('获取用户信息失败');
         }
@@ -86,19 +94,93 @@ Page({
       })
       .then(statsRes => {
         if (statsRes.code === 200) {
-          this.setData({ physicalStats: statsRes.data });
+          // 确保数据类型正确
+          const physicalStats = statsRes.data || {};
+          
+          // 对所有健康指标字段进行检查和处理，确保数值字段为数字类型或默认为0
+          // 血氧相关
+          physicalStats.avg_blood_oxygen = parseFloat(physicalStats.avg_blood_oxygen) || 0;
+          
+          // 心率相关
+          physicalStats.avg_heart_rate = parseInt(physicalStats.avg_heart_rate) || 0;
+          physicalStats.current_heart_rate = parseInt(physicalStats.current_heart_rate) || 0;
+          physicalStats.resting_heart_rate = parseInt(physicalStats.resting_heart_rate) || 0;
+          physicalStats.max_heart_rate = parseInt(physicalStats.max_heart_rate) || 0;
+          
+          // 步频相关
+          physicalStats.current_step_rate = parseInt(physicalStats.current_step_rate) || 0;
+          physicalStats.avg_step_rate = parseInt(physicalStats.avg_step_rate) || 0;
+          
+          // 健康指数相关
+          physicalStats.health_index = parseInt(physicalStats.health_index) || 0;
+          physicalStats.stress_index = parseInt(physicalStats.stress_index) || 0;
+          physicalStats.sleep_quality = parseInt(physicalStats.sleep_quality) || 0;
+          physicalStats.sleep_duration = parseInt(physicalStats.sleep_duration) || 0;
+          physicalStats.aerobic_capacity = parseInt(physicalStats.aerobic_capacity) || 0;
+          
+          // 距离相关
+          physicalStats.weekly_distance = parseFloat(physicalStats.weekly_distance) || 0;
+          
+          this.setData({ physicalStats: physicalStats });
         } else {
+          // 如果获取失败，设置默认的空数据
+          this.setData({ 
+            physicalStats: {
+              avg_blood_oxygen: 0,
+              avg_heart_rate: 0,
+              current_heart_rate: 0,
+              resting_heart_rate: 0,
+              max_heart_rate: 0,
+              current_step_rate: 0,
+              avg_step_rate: 0,
+              health_index: 0,
+              stress_index: 0,
+              sleep_quality: 0,
+              sleep_duration: 0,
+              aerobic_capacity: 0,
+              weekly_distance: 0
+            } 
+          });
           util.showToast('获取体能数据失败');
         }
         return api.getRunningRecords();
       })
       .then(recordsRes => {
         if (recordsRes.code === 200) {
-          const records = recordsRes.data || [];
+          let records = recordsRes.data || [];
+          
+          // 数据预处理和验证
+          records = records.map(record => {
+            // 确保数值字段是数字类型
+            if (record.distance !== undefined) {
+              record.distance = parseFloat(record.distance) || 0;
+              record.distance_km = parseFloat(record.distance_km) || record.distance / 1000 || 0;
+            }
+            if (record.duration !== undefined) {
+              record.duration = parseInt(record.duration) || 0;
+              record.duration_minutes = parseFloat(record.duration_minutes) || record.duration / 60 || 0;
+            }
+            return record;
+          });
+          
           // 按时间降序排序
           records.sort(function(a, b) {
-            return new Date(b.start_time) - new Date(a.start_time);
+            // 确保都有start_time字段，否则可能导致排序错误
+            if (!a.start_time) return 1; // 没有start_time的记录排在后面
+            if (!b.start_time) return -1;
+            
+            // 转换为Date对象进行比较
+            try {
+              const dateA = new Date(a.start_time.replace(/-/g, '/'));
+              const dateB = new Date(b.start_time.replace(/-/g, '/'));
+              return dateB - dateA; // 降序排列，最新的在前面
+            } catch (e) {
+              console.error('日期排序错误:', e, a, b);
+              return 0;
+            }
           });
+          
+          console.log('排序后的跑步记录:', records);
           
           this.setData({
             allRunningRecords: records,
@@ -123,19 +205,44 @@ Page({
     const recentRecords = [];
     const allRecords = this.data.allRunningRecords;
     
+    console.log('更新最近记录，可用记录数:', allRecords.length);
+    
+    // 先确保记录是按照开始时间从新到旧排序
+    const sortedRecords = [...allRecords];
+    sortedRecords.sort((a, b) => {
+      if (!a.start_time) return 1;
+      if (!b.start_time) return -1;
+      
+      try {
+        const dateA = new Date(a.start_time.replace(/-/g, '/'));
+        const dateB = new Date(b.start_time.replace(/-/g, '/'));
+        return dateB - dateA; // 降序排列
+      } catch (e) {
+        console.error('最近记录排序错误:', e);
+        return 0;
+      }
+    });
+    
     // 只取前3条记录
-    for (let i = 0; i < Math.min(3, allRecords.length); i++) {
-      const record = allRecords[i];
-      recentRecords.push({
-        id: record.id,
-        start_time: util.formatTime(new Date(record.start_time.replace(/-/g, '/')), 'yyyy-MM-dd hh:mm'),
-        workout_type: record.workout_type || '跑步',
-        distance_km: record.distance ? (record.distance / 1000).toFixed(2) : '0',
-        duration_minutes: record.duration ? Math.round(record.duration / 60) : '0',
-        avg_pace_formatted: record.avg_pace ? util.formatPace(record.avg_pace) : '--'
-      });
+    for (let i = 0; i < Math.min(3, sortedRecords.length); i++) {
+      const record = sortedRecords[i];
+      try {
+        // 数据验证和转换
+        const formattedRecord = {
+          id: record.id,
+          start_time: record.start_time ? util.formatTime(new Date(record.start_time.replace(/-/g, '/')), 'yyyy-MM-dd HH:mm') : '未知时间',
+          workout_type: record.workout_type || '跑步',
+          distance_km: record.distance_km || (record.distance ? (record.distance / 1000).toFixed(2) : '0'),
+          duration_minutes: record.duration_minutes || (record.duration ? Math.round(record.duration / 60) : '0'),
+          avg_pace_formatted: record.avg_pace_formatted || (record.avg_pace ? util.formatPace(record.avg_pace) : '--')
+        };
+        recentRecords.push(formattedRecord);
+      } catch (error) {
+        console.error('处理记录异常:', error, record);
+      }
     }
     
+    console.log('处理后的最近记录:', recentRecords);
     this.setData({ runningRecords: recentRecords });
   },
 
@@ -155,42 +262,56 @@ Page({
     // 过滤在时间范围内的记录
     const filteredRecords = [];
     for (let i = 0; i < records.length; i++) {
-      const recordDate = new Date(records[i].start_time.replace(/-/g, '/'));
-      if (recordDate >= startDate && recordDate <= now) {
-        filteredRecords.push(records[i]);
+      try {
+        if (!records[i].start_time) continue;
+        const recordDate = new Date(records[i].start_time.replace(/-/g, '/'));
+        if (recordDate >= startDate && recordDate <= now) {
+          filteredRecords.push(records[i]);
+        }
+      } catch (e) {
+        console.error('处理记录日期异常:', e, records[i]);
       }
     }
     
     // 按日期分组汇总数据
     const groupedData = {};
     for (let i = 0; i < filteredRecords.length; i++) {
-      const record = filteredRecords[i];
-      const recordDate = new Date(record.start_time.replace(/-/g, '/'));
-      let key;
-      
-      if (groupBy === 'day') {
-        key = util.formatTime(recordDate, 'MM-dd');
-      } else {
-        key = util.formatTime(recordDate, 'yyyy-MM');
+      try {
+        const record = filteredRecords[i];
+        if (!record.start_time) continue;
+        
+        const recordDate = new Date(record.start_time.replace(/-/g, '/'));
+        let key;
+        
+        if (groupBy === 'day') {
+          key = util.formatTime(recordDate, 'MM-dd');
+        } else {
+          key = util.formatTime(recordDate, 'yyyy-MM');
+        }
+        
+        if (!groupedData[key]) {
+          groupedData[key] = { value: 0 };
+        }
+        
+        let value = 0;
+        if (dataKey in record) {
+          value = Number(record[dataKey] || 0);
+        }
+        
+        // 处理距离数据，将米转换为公里
+        if (dataKey === 'distance') {
+          value = value / 1000;
+        }
+        
+        // 处理时长数据，将秒转换为分钟
+        if (dataKey === 'duration') {
+          value = value / 60;
+        }
+        
+        groupedData[key].value += value;
+      } catch (e) {
+        console.error('分组数据异常:', e, filteredRecords[i]);
       }
-      
-      if (!groupedData[key]) {
-        groupedData[key] = { value: 0 };
-      }
-      
-      let value = Number(record[dataKey] || 0);
-      
-      // 处理距离数据，将米转换为公里
-      if (dataKey === 'distance') {
-        value = value / 1000;
-      }
-      
-      // 处理时长数据，将秒转换为分钟
-      if (dataKey === 'duration') {
-        value = value / 60;
-      }
-      
-      groupedData[key].value += value;
     }
     
     // 格式化为图表所需数据格式

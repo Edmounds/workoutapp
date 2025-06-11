@@ -9,31 +9,69 @@ const markdown = require('./markdown.js');
 // DeepSeek API配置
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 const DEEPSEEK_MODEL = "deepseek-chat"; // 根据实际使用的模型名称修改
+const DEEPSEEK_API_KEY = "sk-2aee504fdb5e4c3f84205c1f398b801b"; // 固定的API密钥
+
+// 缓存键名
+const FITNESS_ADVICE_CACHE_KEY = 'fitness_advice_cache';
+const NUTRITION_ADVICE_CACHE_KEY = 'nutrition_advice_cache';
 
 /**
- * 获取存储的API Key
+ * 获取API Key
  */
 function getApiKey() {
-  return wx.getStorageSync('deepseek_api_key');
+  return DEEPSEEK_API_KEY;
 }
 
 /**
- * 设置API Key
+ * 设置API Key (此方法保留但不再需要)
  * @param {String} apiKey - DeepSeek API密钥
  */
 function setApiKey(apiKey) {
-  wx.setStorageSync('deepseek_api_key', apiKey);
+  // 不再需要设置API密钥
+  console.log('使用预设的API密钥，无需设置');
 }
 
 /**
- * 调用DeepSeek API获取健身建议
- * @param {Object} runningData - 跑步数据
+ * 获取缓存的数据
+ * @param {String} cacheKey - 缓存键名
  */
-function getFitnessAdvice(runningData) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    return Promise.reject(new Error('未设置DeepSeek API密钥'));
+function getCachedData(cacheKey) {
+  return wx.getStorageSync(cacheKey);
+}
+
+/**
+ * 设置缓存数据
+ * @param {String} cacheKey - 缓存键名
+ * @param {Object} data - 要缓存的数据
+ */
+function setCachedData(cacheKey, data) {
+  wx.setStorageSync(cacheKey, data);
+}
+
+/**
+ * 清除缓存数据
+ * @param {String} cacheKey - 缓存键名
+ */
+function clearCache(cacheKey) {
+  wx.removeStorageSync(cacheKey);
+}
+
+/**
+ * 获取健身建议（优先使用缓存）
+ * @param {Object} runningData - 跑步数据
+ * @param {Boolean} forceRefresh - 是否强制刷新
+ */
+function getFitnessAdvice(runningData, forceRefresh = false) {
+  // 检查是否有缓存，且不是强制刷新
+  const cachedAdvice = getCachedData(FITNESS_ADVICE_CACHE_KEY);
+  if (cachedAdvice && !forceRefresh) {
+    return Promise.resolve({
+      code: 200,
+      data: cachedAdvice
+    });
   }
+
+  const apiKey = getApiKey();
 
   // 构建提示词
   const prompt = `作为一个专业的跑步教练，请根据以下跑步数据提供详细的训练建议：
@@ -55,6 +93,8 @@ function getFitnessAdvice(runningData) {
     .then(response => {
       // 解析API响应，提取建议内容
       const advice = parseTrainingAdvice(response);
+      // 缓存结果
+      setCachedData(FITNESS_ADVICE_CACHE_KEY, advice);
       return {
         code: 200,
         data: advice
@@ -70,14 +110,21 @@ function getFitnessAdvice(runningData) {
 }
 
 /**
- * 调用DeepSeek API获取营养建议
+ * 获取营养建议（优先使用缓存）
  * @param {Object} runningData - 跑步数据
+ * @param {Boolean} forceRefresh - 是否强制刷新
  */
-function getNutritionAdvice(runningData) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    return Promise.reject(new Error('未设置DeepSeek API密钥'));
+function getNutritionAdvice(runningData, forceRefresh = false) {
+  // 检查是否有缓存，且不是强制刷新
+  const cachedAdvice = getCachedData(NUTRITION_ADVICE_CACHE_KEY);
+  if (cachedAdvice && !forceRefresh) {
+    return Promise.resolve({
+      code: 200,
+      data: cachedAdvice
+    });
   }
+
+  const apiKey = getApiKey();
 
   // 构建提示词
   const prompt = `作为一个专业的营养师，请根据以下跑步数据提供详细的营养摄入建议：
@@ -99,6 +146,8 @@ function getNutritionAdvice(runningData) {
     .then(response => {
       // 解析API响应，提取建议内容
       const advice = parseNutritionAdvice(response);
+      // 缓存结果
+      setCachedData(NUTRITION_ADVICE_CACHE_KEY, advice);
       return {
         code: 200,
         data: advice
@@ -111,6 +160,36 @@ function getNutritionAdvice(runningData) {
         msg: '获取营养建议失败: ' + (err.message || '未知错误')
       };
     });
+}
+
+/**
+ * 刷新所有建议（强制重新获取）
+ * @param {Object} runningData - 跑步数据
+ */
+function refreshAllAdvice(runningData) {
+  // 清除所有缓存
+  clearCache(FITNESS_ADVICE_CACHE_KEY);
+  clearCache(NUTRITION_ADVICE_CACHE_KEY);
+  
+  // 重新获取所有建议
+  return Promise.all([
+    getFitnessAdvice(runningData, true),
+    getNutritionAdvice(runningData, true)
+  ]).then(([fitnessResponse, nutritionResponse]) => {
+    return {
+      code: 200,
+      data: {
+        fitness: fitnessResponse.data,
+        nutrition: nutritionResponse.data
+      }
+    };
+  }).catch(err => {
+    console.error('刷新建议失败:', err);
+    return {
+      code: 500,
+      msg: '刷新建议失败: ' + (err.message || '未知错误')
+    };
+  });
 }
 
 /**
@@ -409,5 +488,7 @@ module.exports = {
   getApiKey,
   setApiKey,
   getFitnessAdvice,
-  getNutritionAdvice
-};
+  getNutritionAdvice,
+  refreshAllAdvice,
+  clearCache
+}; 

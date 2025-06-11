@@ -44,7 +44,7 @@ class DeviceSimulatorGUI:
         self.mongo_config = {
             'host': '113.45.220.0',
             'port': 27017,
-            'username': 'workout_app',
+            'username': 'cxr',
             'password': 'Chenqichen666',
             'database': 'workout_app'
         }
@@ -631,20 +631,7 @@ class DeviceSimulatorGUI:
             self.root.after(0, lambda dev_id=device_id, i=i: self.status_var.set(f"({i+1}/{total_devices}) 处理设备: {dev_id}"))
             
             try:
-                for batch_num in range(num_batches):
-                    # Sub-status update for batch
-                    self.root.after(0, lambda dev_id=device_id, b_num=batch_num: self.status_var.set(f"设备 {dev_id}: 生成批次 {b_num+1}/{num_batches}"))
-
-                    # Pick a random day within the specified range
-                    random_day = random.randint(0, days_range - 1)
-                    # Pick a random hour/minute for that day
-                    random_hour = random.randint(0, 23)
-                    random_minute = random.randint(0, 59)
-
-                    # Calculate the start time for the workout
-                    start_time_base = datetime.now() - timedelta(days=random_day, hours=random_hour, minutes=random_minute)
-                    
-                    self.generate_workout_data(device_id, user_id, start_time_base=start_time_base, update_status=False)
+                self.generate_complete_user_data(device_id, user_id, num_batches, days_range)
             except Exception as e:
                 # Log error for the specific device and continue
                 print(f"为设备 {device_id} 生成数据时出错: {e}")
@@ -653,203 +640,253 @@ class DeviceSimulatorGUI:
         self.root.after(0, lambda: self.status_var.set(f"批量生成任务完成。"))
         self.root.after(0, lambda: messagebox.showinfo("完成", f"已为 {total_devices} 个设备生成数据。"))
 
-    def generate_workout_data(self, device_id, user_id, update_status=True, start_time_base=None):
-        mongo_client = None
+    def generate_complete_user_data(self, device_id, user_id, num_workouts=10, days_range=30):
+        """为用户生成完整的模拟数据，确保所有表同步更新"""
         try:
-            if update_status:
-                self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 连接MongoDB..."))
-
-            # 1. 连接MongoDB
-            mongo_client = pymongo.MongoClient(
-                host=self.mongo_config['host'], port=self.mongo_config['port'],
-                username=self.mongo_config['username'], password=self.mongo_config['password'],
-                authSource='workout_app', serverSelectionTimeoutMS=5000
-            )
-            db = mongo_client[self.mongo_config['database']]
+            self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 正在生成 {num_workouts} 条完整运动记录..."))
             
-            # 2. 生成模拟跑步数据
-            duration_minutes = random.randint(20, 70)
-            if start_time_base:
-                start_time = start_time_base
-            else:
-                # Default behavior if not called from batch generation
-                start_time = datetime.now() - timedelta(days=random.randint(0, 30), minutes=duration_minutes)
-            end_time = start_time + timedelta(minutes=duration_minutes)
+            # 1. 生成多个运动记录
+            workout_records = []
+            total_distance = 0
+            total_duration = 0
             
-            if update_status:
-                self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 生成 {duration_minutes} 分钟的原始数据..."))
-
-            docs = []
-            base_heart_rate = random.randint(70, 85)
-            base_steps = random.randint(60, 80)
-            
-            for m in range(duration_minutes):
-                intensity_factor = 1 + 0.5 * math.sin(m / duration_minutes * math.pi)
-                heart_rate = int(base_heart_rate + (m / (duration_minutes / 3)) * 40 * intensity_factor) if m < duration_minutes / 3 else int((base_heart_rate + 40) + random.randint(-8, 8) * intensity_factor)
-                step_count = int(base_steps + random.randint(-10, 15) * intensity_factor)
-                calories = round(step_count * random.uniform(0.04, 0.06) * intensity_factor, 2)
-                distance = round(step_count * random.uniform(0.75, 0.85) * intensity_factor, 2)
-                pace = round(random.uniform(4.5, 9.0), 2)
-                blood_oxygen = round(random.uniform(95.0, 99.9), 1)
-                temperature = round(random.uniform(36.1, 37.2), 1)
+            for i in range(num_workouts):
+                # 生成随机日期和时间
+                random_day = random.randint(0, days_range - 1)
+                random_hour = random.randint(6, 21)
+                random_minute = random.randint(0, 59)
+                start_time = datetime.now() - timedelta(days=random_day, hours=random_hour, minutes=random_minute)
                 
-                # 1. 心率异常
-                if random.random() < 0.05:  # 5%概率生成异常数据
-                    heart_rate = random.choice([
-                        random.randint(180, 220),  # 异常高心率
-                        random.randint(40, 55)     # 异常低心率
-                    ])
+                # 生成运动数据
+                duration_minutes = random.randint(20, 70)
+                duration_seconds = duration_minutes * 60
+                distance = random.uniform(3, 10) * 1000  # 3-10公里，转为米
+                avg_pace = int(duration_seconds / (distance / 1000))  # 秒/公里
+                best_pace = int(avg_pace * random.uniform(0.9, 0.98))  # 最佳配速略快于平均配速
+                avg_hr = random.randint(120, 180)
+                max_hr = avg_hr + random.randint(10, 25)  # 最大心率高于平均心率
+                avg_step_rate = random.randint(160, 185)
+                calories = int(duration_minutes * 7 + distance / 100)
+                elevation_gain = round(random.uniform(0, 30), 2)
+                weather = random.choice(["晴朗", "多云", "小雨", "微风", "阴天"])
+                temperature = round(random.uniform(15, 30), 1)
                 
-                # 2. 步数和距离异常
-                if random.random() < 0.02:
-                    step_count = 0  # 运动中断
-                    distance = 0
-                elif random.random() < 0.03:
-                    step_count = int(step_count * 3)  # 数据异常高
-                    distance = round(distance * 3, 2)
+                # 运动类型
+                workout_types = ["跑步", "长距离跑", "间歇跑", "节奏跑", "恢复跑"]
+                workout_type = random.choice(workout_types)
                 
-                # 3. 配速异常
-                if random.random() < 0.04:
-                    pace = random.choice([
-                        round(random.uniform(2.0, 3.5), 2),  # 极快配速
-                        round(random.uniform(12.0, 20.0), 2)  # 极慢配速
-                    ])
-                
-                # 4. 血氧异常
-                if random.random() < 0.03:
-                    blood_oxygen = round(random.uniform(85.0, 92.0), 1)
-                
-                # 5. 体温异常
-                if random.random() < 0.04:
-                    temperature = random.choice([
-                        round(random.uniform(37.8, 39.5), 1),  # 发热
-                        round(random.uniform(35.0, 35.8), 1)   # 低温
-                    ])
-                
-                ts = start_time + timedelta(minutes=m)
-                doc = {
-                    "user_id": int(user_id), "device_id": device_id, "timestamp": ts,
-                    "heart_rate": heart_rate, "step_count": step_count, "calories": calories,
-                    "distance": distance, "pace": pace,
-                    "elevation": round(random.uniform(-1, 2), 2),
-                    "blood_oxygen": blood_oxygen,
+                # 添加到记录列表
+                workout_records.append({
+                    "workout_type": workout_type,
+                    "start_time": start_time,
+                    "duration": duration_seconds,
+                    "distance": distance,
+                    "avg_pace": avg_pace,
+                    "best_pace": best_pace,
+                    "avg_heart_rate": avg_hr,
+                    "max_heart_rate": max_hr,
+                    "avg_step_rate": avg_step_rate,
+                    "calories": calories,
+                    "elevation_gain": elevation_gain,
+                    "weather": weather,
                     "temperature": temperature,
-                    "weather": random.choice(["sunny", "cloudy", "rainy", "windy"])
-                }
-                docs.append(doc)
+                    "end_time": start_time + timedelta(seconds=duration_seconds)
+                })
+                
+                # 累加总距离和时间
+                total_distance += distance / 1000  # 转为公里
+                total_duration += duration_minutes
+                
+            self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 正在写入数据到MySQL..."))
             
-            # 3. 插入MongoDB
-            if docs:
-                db.raw_records.insert_many(docs)
-
-            if update_status:
-                self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 计算统计数据并存入MySQL..."))
-
-            # 4. 计算并存储统计数据到MySQL
-            self.calculate_and_store_stats(user_id, start_time, end_time)
-
-            if update_status:
-                self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 数据生成成功！"))
+            # 2. 将运动记录写入数据库和更新用户统计
+            mysql_conn = mysql.connector.connect(**self.mysql_config)
+            cursor = mysql_conn.cursor()
+            
+            # 保存运动记录
+            for record in workout_records:
+                notes = f"今天的{record['workout_type']}训练，感觉{random.choice(['很棒', '一般', '还不错'])}！"
+                
+                cursor.execute("""
+                    INSERT INTO running_records 
+                    (user_id, workout_type, start_time, end_time, duration, distance, avg_pace, 
+                    best_pace, avg_heart_rate, max_heart_rate, avg_step_rate, calories, elevation_gain,
+                    weather, temperature, notes)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    user_id, record["workout_type"], record["start_time"], record["end_time"],
+                    record["duration"], record["distance"], record["avg_pace"],
+                    record["best_pace"], record["avg_heart_rate"], record["max_heart_rate"], 
+                    record["avg_step_rate"], record["calories"], record["elevation_gain"],
+                    record["weather"], record["temperature"], notes
+                ))
+            
+            # 3. 更新用户总统计数据
+            cursor.execute("""
+                UPDATE users 
+                SET total_workouts = total_workouts + %s, 
+                    total_duration = total_duration + %s, 
+                    total_distance = total_distance + %s, 
+                    updated_at = NOW()
+                WHERE id = %s
+            """, (num_workouts, total_duration, total_distance, user_id))
+            
+            self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 正在生成体能数据..."))
+            
+            # 4. 生成并保存体能数据
+            today = datetime.now().date()
+            for i in range(min(days_range, 30)):  # 最多生成30天的体能数据
+                date = today - timedelta(days=i)
+                
+                # 生成随机体能数据
+                avg_hr = random.randint(60, 80)
+                current_hr = random.randint(avg_hr-5, avg_hr+5)
+                rest_hr = random.randint(50, 65)
+                max_hr = random.randint(140, 180)
+                current_step_rate = random.randint(160, 180)
+                avg_step_rate = random.randint(160, 180)
+                blood_oxygen = round(random.uniform(95.0, 99.5), 1)
+                current_pace = f"{random.randint(5, 8)}'{random.randint(0, 59)}\""
+                health_index = random.randint(60, 95)
+                stress_index = random.randint(10, 40)
+                sleep_quality = random.randint(50, 95)
+                sleep_duration = random.randint(360, 540)
+                aerobic_capacity = random.randint(60, 90)
+                weekly_distance = round(random.uniform(5, 30), 2)
+                
+                # 保存体能数据
+                cursor.execute("""
+                    INSERT INTO physical_stats 
+                    (user_id, date, avg_heart_rate, current_heart_rate, resting_heart_rate, max_heart_rate,
+                    current_step_rate, avg_step_rate, avg_blood_oxygen, current_pace, health_index, 
+                    stress_index, sleep_quality, sleep_duration, aerobic_capacity, weekly_distance)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                    avg_heart_rate = VALUES(avg_heart_rate), 
+                    current_heart_rate = VALUES(current_heart_rate),
+                    resting_heart_rate = VALUES(resting_heart_rate),
+                    max_heart_rate = VALUES(max_heart_rate),
+                    current_step_rate = VALUES(current_step_rate),
+                    avg_step_rate = VALUES(avg_step_rate),
+                    avg_blood_oxygen = VALUES(avg_blood_oxygen),
+                    current_pace = VALUES(current_pace),
+                    health_index = VALUES(health_index), 
+                    stress_index = VALUES(stress_index),
+                    sleep_quality = VALUES(sleep_quality), 
+                    sleep_duration = VALUES(sleep_duration),
+                    aerobic_capacity = VALUES(aerobic_capacity),
+                    weekly_distance = VALUES(weekly_distance)
+                """, (
+                    user_id, date, avg_hr, current_hr, rest_hr, max_hr,
+                    current_step_rate, avg_step_rate, blood_oxygen, current_pace,
+                    health_index, stress_index, sleep_quality, sleep_duration,
+                    aerobic_capacity, weekly_distance
+                ))
+            
+            self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 正在创建进度目标..."))
+            
+            # 5. 为用户创建或更新进度目标
+            monthly_goal = round(total_distance * 1.5, 2)  # 设置比当前总运动量高50%的目标
+            deadline = today + timedelta(days=30)
+            
+            # 检查是否已有进度目标
+            cursor.execute("SELECT id FROM progress_goals WHERE user_id = %s AND category = '距离'", (user_id,))
+            goal_exists = cursor.fetchone()
+            
+            if goal_exists:
+                # 更新现有目标
+                cursor.execute("""
+                    UPDATE progress_goals 
+                    SET current_value = %s, target_value = %s, deadline = %s
+                    WHERE user_id = %s AND category = '距离'
+                """, (total_distance, monthly_goal, deadline, user_id))
+            else:
+                # 创建新目标
+                cursor.execute("""
+                    INSERT INTO progress_goals (user_id, title, current_value, target_value, category, deadline)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (
+                    user_id, '月跑量目标', total_distance, monthly_goal, '距离', deadline
+                ))
+            
+            mysql_conn.commit()
+            
+            self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 正在生成MongoDB原始数据..."))
+            
+            # 6. 同时生成MongoDB的原始数据以保持一致性
+            self.generate_mongo_raw_data(user_id, device_id, workout_records)
+            
+            self.root.after(0, lambda: self.status_var.set(f"设备 {device_id}: 数据生成完成！"))
+            return True
             
         except Exception as e:
-            error_msg = f"为设备 {device_id} 生成数据时出错: {e}"
-            if update_status:
-                self.root.after(0, lambda: self.on_task_error(error_msg))
-            else:
-                print(error_msg) # Log to console if it's a batch job
-            raise e
+            error_msg = f"生成完整用户数据时出错: {e}"
+            print(error_msg)
+            self.root.after(0, lambda: self.status_var.set(error_msg))
+            if 'mysql_conn' in locals() and mysql_conn.is_connected():
+                mysql_conn.rollback()
+            return False
         finally:
-            if mongo_client:
-                mongo_client.close()
+            if 'cursor' in locals():
+                cursor.close()
+            if 'mysql_conn' in locals() and mysql_conn.is_connected():
+                mysql_conn.close()
 
-    def calculate_and_store_stats(self, user_id, start_time, end_time):
-        mongo_client = None
-        mysql_conn = None
+    def generate_mongo_raw_data(self, user_id, device_id, workout_records):
+        """为每个运动记录生成对应的MongoDB原始数据"""
         try:
-            # 连接DB
             mongo_client = pymongo.MongoClient(
                 host=self.mongo_config['host'], port=self.mongo_config['port'],
                 username=self.mongo_config['username'], password=self.mongo_config['password'],
                 authSource='workout_app'
             )
-            mongo_db = mongo_client[self.mongo_config['database']]
-            mysql_conn = mysql.connector.connect(**self.mysql_config)
-            cursor = mysql_conn.cursor()
-
-            # 1. 从MongoDB查询原始数据
-            records = list(mongo_db.raw_records.find({
-                "user_id": int(user_id), "timestamp": {"$gte": start_time, "$lte": end_time}
-            }))
-            if not records: 
-                self.root.after(0, lambda: self.log(f"用户 {user_id} 没有找到 {start_time.strftime('%Y-%m-%d %H:%M')} 至 {end_time.strftime('%Y-%m-%d %H:%M')} 的原始数据"))
-                return
-
-            # 2. 计算运动记录统计
-            duration_sec = (end_time - start_time).total_seconds()
-            total_distance_m = sum(r['distance'] for r in records)
-            avg_pace_sec_km = (duration_sec / (total_distance_m / 1000)) if total_distance_m > 0 else 0
-            avg_heart_rate = sum(r['heart_rate'] for r in records) / len(records)
-            total_calories = sum(r['calories'] for r in records)
-            elevation_gain = sum(r['elevation'] for r in records if r['elevation'] > 0)
-            avg_step_rate = (sum(r['step_count'] for r in records) / duration_sec * 60) if duration_sec > 0 else 0
-
-            # 插入 running_records
-            sql_run = """
-                INSERT INTO running_records 
-                (user_id, workout_type, start_time, end_time, duration, distance, avg_pace, 
-                avg_heart_rate, calories, elevation_gain, avg_step_rate, weather, temperature)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            values_run = (
-                user_id, '跑步', start_time, end_time, int(duration_sec), round(total_distance_m, 2),
-                int(avg_pace_sec_km), int(avg_heart_rate), int(total_calories), round(elevation_gain, 2),
-                int(avg_step_rate), records[-1]['weather'], round(sum(r['temperature'] for r in records) / len(records), 1)
-            )
-            cursor.execute(sql_run, values_run)
-            run_record_id = cursor.lastrowid
+            db = mongo_client[self.mongo_config['database']]
             
-            self.root.after(0, lambda: self.log(f"用户 {user_id}: 已插入跑步记录ID: {run_record_id}, 距离: {round(total_distance_m/1000, 2)}km, 时长: {int(duration_sec/60)}分钟"))
-
-            # 3. 计算健康数据统计
-            resting_heart_rate = min(r['heart_rate'] for r in records)
-            max_heart_rate = max(r['heart_rate'] for r in records)
-            avg_blood_oxygen = sum(r['blood_oxygen'] for r in records) / len(records)
-            health_index = random.randint(60, 95)
-            stress_index = random.randint(10, 40)
-            sleep_quality = random.randint(50, 95)
-            sleep_duration = random.randint(360, 540)
-            
-            # 插入或更新 physical_stats
-            sql_health = """
-                INSERT INTO physical_stats (user_id, date, avg_heart_rate, resting_heart_rate, max_heart_rate, 
-                avg_blood_oxygen, health_index, stress_index, sleep_quality, sleep_duration)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                avg_heart_rate = VALUES(avg_heart_rate), resting_heart_rate = VALUES(resting_heart_rate),
-                max_heart_rate = VALUES(max_heart_rate), avg_blood_oxygen = VALUES(avg_blood_oxygen),
-                health_index = VALUES(health_index), stress_index = VALUES(stress_index),
-                sleep_quality = VALUES(sleep_quality), sleep_duration = VALUES(sleep_duration)
-            """
-            values_health = (
-                user_id, start_time.date(), int(avg_heart_rate), resting_heart_rate, max_heart_rate,
-                round(avg_blood_oxygen, 1), health_index, stress_index, sleep_quality, sleep_duration
-            )
-            cursor.execute(sql_health, values_health)
-            
-            self.root.after(0, lambda: self.log(f"用户 {user_id}: 已更新体能数据，日期: {start_time.date()}, 平均心率: {int(avg_heart_rate)}, 健康指数: {health_index}"))
-
-            mysql_conn.commit()
-            self.root.after(0, lambda: self.log(f"用户 {user_id}: 数据同步完成"))
-            
+            for record in workout_records:
+                start_time = record["start_time"]
+                duration_seconds = record["duration"]
+                end_time = record["end_time"]
+                
+                # 为每分钟生成一条原始数据
+                duration_minutes = duration_seconds // 60
+                raw_records = []
+                
+                base_heart_rate = random.randint(70, 85)
+                base_steps = random.randint(60, 80)
+                
+                for m in range(duration_minutes):
+                    intensity_factor = 1 + 0.5 * math.sin(m / duration_minutes * math.pi)
+                    heart_rate = int(base_heart_rate + (m / (duration_minutes / 3)) * 40 * intensity_factor) if m < duration_minutes / 3 else int((base_heart_rate + 40) + random.randint(-8, 8) * intensity_factor)
+                    step_count = int(base_steps + random.randint(-10, 15) * intensity_factor)
+                    calories = round(step_count * random.uniform(0.04, 0.06) * intensity_factor, 2)
+                    distance = round(step_count * random.uniform(0.75, 0.85) * intensity_factor, 2)
+                    pace = round(random.uniform(4.5, 9.0), 2)
+                    blood_oxygen = round(random.uniform(95.0, 99.9), 1)
+                    temperature = round(random.uniform(36.1, 37.2), 1)
+                    
+                    ts = start_time + timedelta(minutes=m)
+                    doc = {
+                        "user_id": int(user_id), "device_id": device_id, "timestamp": ts,
+                        "heart_rate": heart_rate, "step_count": step_count, "calories": calories,
+                        "distance": distance, "pace": pace,
+                        "elevation": round(random.uniform(-1, 2), 2),
+                        "blood_oxygen": blood_oxygen,
+                        "temperature": temperature,
+                        "weather": record["weather"]
+                    }
+                    raw_records.append(doc)
+                
+                # 插入MongoDB
+                if raw_records:
+                    db.raw_records.insert_many(raw_records)
+        
         except Exception as e:
-            if mysql_conn: mysql_conn.rollback()
-            error_msg = f"计算或存储统计数据时出错: {e}"
-            self.root.after(0, lambda: self.log(f"错误: {error_msg}"))
-            raise Exception(error_msg)
+            error_msg = f"生成MongoDB原始数据时出错: {e}"
+            print(error_msg)
+            self.root.after(0, lambda: self.log(error_msg))
         finally:
-            if mongo_client: mongo_client.close()
-            if cursor: cursor.close()
-            if mysql_conn: mysql_conn.close()
+            if 'mongo_client' in locals():
+                mongo_client.close()
 
     def log(self, message):
         print(message)

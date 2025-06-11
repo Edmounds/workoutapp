@@ -5,7 +5,9 @@
     "pages/advice/advice",
     "pages/profile/profile",
     "pages/index/index",
-    "pages/logs/logs"
+    "pages/logs/logs",
+    "pages/records/records",
+    "pages/recordDetail/recordDetail"
   ],
   "window": {
     "navigationBarTextStyle": "white",

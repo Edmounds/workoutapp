@@ -1,6 +1,7 @@
 // profile.js
 const api = require('../../utils/api.js');
 const util = require('../../utils/util.js');
+const deepseek = require('../../utils/deepseek.js');
 
 Page({
   /**
@@ -10,6 +11,8 @@ Page({
     isLoading: true,
     isSaving: false,
     showEditModal: false,
+    showApiKeyModal: false,
+    apiKey: '',
     
     // 用户信息
     userInfo: {},
@@ -58,6 +61,8 @@ Page({
   onShow: function () {
     this.checkLogin();
     this.loadUserInfo();
+    // 加载API密钥
+    this.loadApiKey();
   },
 
   /**
@@ -77,8 +82,19 @@ Page({
    */
   formatTotalDuration: function(seconds) {
     if (!seconds) return '0h';
-    const hours = (seconds / 3600).toFixed(1);
-    return hours + 'h';
+    // 确保seconds是数字类型
+    seconds = parseInt(seconds) || 0;
+    // 转换为小时和分钟
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${minutes}m`;
+    }
   },
 
   /**
@@ -92,6 +108,20 @@ Page({
         if (res.code === 200) {
           const userInfo = res.data.user_info;
           console.log('用户信息获取成功:', res.data);
+          
+          // 确保total_distance和total_workouts是数字而不是字符串
+          if (userInfo.total_distance !== undefined) {
+            userInfo.total_distance = parseFloat(userInfo.total_distance) || 0;
+          }
+          
+          if (userInfo.total_workouts !== undefined) {
+            userInfo.total_workouts = parseInt(userInfo.total_workouts) || 0;
+          }
+          
+          // 确保total_duration是数字
+          if (userInfo.total_duration !== undefined) {
+            userInfo.total_duration = parseInt(userInfo.total_duration) || 0;
+          }
           
           // 计算BMI
           let bmi = '';
@@ -114,6 +144,12 @@ Page({
               weight: userInfo.weight || ''
             },
             isLoading: false
+          });
+          
+          console.log('处理后的用户信息:', {
+            total_distance: userInfo.total_distance,
+            total_workouts: userInfo.total_workouts,
+            total_duration: userInfo.total_duration
           });
         } else {
           this.setData({ isLoading: false });
@@ -246,24 +282,61 @@ Page({
   },
 
   /**
-   * 处理退出登录
+   * 加载API密钥
    */
-  handleLogout: function() {
-    wx.showModal({
-      title: '退出登录',
-      content: '确定要退出登录吗？',
-      success: (res) => {
-        if (res.confirm) {
-          // 清除本地存储的登录信息
-          wx.removeStorageSync('token');
-          wx.removeStorageSync('userInfo');
-          
-          // 跳转到登录页
-          wx.reLaunch({
-            url: '/pages/login/login'
-          });
-        }
-      }
+  loadApiKey: function() {
+    const apiKey = deepseek.getApiKey();
+    this.setData({
+      apiKey: apiKey || ''
+    });
+  },
+
+  /**
+   * 设置API密钥
+   */
+  setApiKey: function() {
+    this.setData({
+      showApiKeyModal: true
+    });
+  },
+
+  /**
+   * 关闭API密钥设置弹窗
+   */
+  closeApiKeyModal: function() {
+    this.setData({
+      showApiKeyModal: false
+    });
+  },
+
+  /**
+   * API密钥输入变化
+   */
+  apiKeyInput: function(e) {
+    this.setData({
+      apiKey: e.detail.value
+    });
+  },
+
+  /**
+   * 保存API密钥
+   */
+  saveApiKey: function() {
+    const { apiKey } = this.data;
+    if (!apiKey) {
+      util.showToast('请输入DeepSeek API密钥');
+      return;
+    }
+    
+    // 保存API密钥
+    deepseek.setApiKey(apiKey);
+    
+    // 提示保存成功
+    util.showToast('API密钥设置成功', 'success');
+    
+    // 关闭弹窗
+    this.setData({
+      showApiKeyModal: false
     });
   },
 
@@ -271,21 +344,43 @@ Page({
    * 导航到设置页面
    */
   navigateToSettings: function() {
-    util.showToast('该功能暂未开放');
+    this.setApiKey();
   },
 
   /**
-   * 导航到隐私政策页面
+   * 导航到隐私页面
    */
   navigateToPrivacy: function() {
-    util.showToast('该功能暂未开放');
+    util.showToast('暂未开放');
   },
 
   /**
-   * 导航到关于我们页面
+   * 导航到关于页面
    */
   navigateToAbout: function() {
-    util.showToast('该功能暂未开放');
+    util.showToast('暂未开放');
+  },
+
+  /**
+   * 处理退出登录
+   */
+  handleLogout: function() {
+    wx.showModal({
+      title: '提示',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 清除本地存储的登录信息
+          wx.removeStorageSync('token');
+          wx.removeStorageSync('userInfo');
+          
+          // 重定向到登录页
+          wx.reLaunch({
+            url: '/pages/login/login'
+          });
+        }
+      }
+    });
   },
 
   /**

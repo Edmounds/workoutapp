@@ -111,14 +111,48 @@ Page({
     const statsPromise = api.getPhysicalStats()
       .then(res => {
         if (res.code === 200) {
+          // 确保所有数值字段都是数字类型
+          const physicalStats = res.data || {};
+          
+          // 确保数值字段为数字类型或默认为0
+          physicalStats.avg_blood_oxygen = parseFloat(physicalStats.avg_blood_oxygen) || 0;
+          physicalStats.avg_heart_rate = parseInt(physicalStats.avg_heart_rate) || 0;
+          physicalStats.current_heart_rate = parseInt(physicalStats.current_heart_rate) || 0;
+          physicalStats.resting_heart_rate = parseInt(physicalStats.resting_heart_rate) || 0;
+          physicalStats.max_heart_rate = parseInt(physicalStats.max_heart_rate) || 0;
+          physicalStats.health_index = parseInt(physicalStats.health_index) || 0;
+          physicalStats.stress_index = parseInt(physicalStats.stress_index) || 0;
+          physicalStats.sleep_quality = parseInt(physicalStats.sleep_quality) || 0;
+          physicalStats.daily_distance = parseFloat(physicalStats.daily_distance) || 0;
+          physicalStats.weekly_distance = parseFloat(physicalStats.weekly_distance) || 0;
+          
           this.setData({
-            physicalStats: res.data
+            physicalStats: physicalStats
           });
-          console.log('体能数据获取成功:', res.data);
-          return res.data; // 返回体能数据，用于后续AI建议
+          
+          console.log('体能数据获取成功:', physicalStats);
+          return physicalStats; // 返回处理后的体能数据，用于后续AI建议
         } else {
+          // 如果获取失败，设置默认的空数据
+          const defaultStats = {
+            avg_blood_oxygen: 0,
+            avg_heart_rate: 0,
+            current_heart_rate: 0,
+            resting_heart_rate: 0,
+            max_heart_rate: 0,
+            health_index: 0,
+            stress_index: 0,
+            sleep_quality: 0,
+            daily_distance: 0,
+            weekly_distance: 0
+          };
+          
+          this.setData({
+            physicalStats: defaultStats
+          });
+          
           util.showToast('获取体能数据失败');
-          return null;
+          return defaultStats;
         }
       })
       .catch(err => {
@@ -176,7 +210,7 @@ Page({
           this.setData({
             fitnessAdvice: {},
             fitnessAdviceNodes: [],
-            fitnessAdviceError: '获取健身建议失败，请检查网络或API密钥。'
+            fitnessAdviceError: '获取健身建议失败，请检查网络连接。'
           });
         });
       
@@ -210,7 +244,7 @@ Page({
           this.setData({
             nutritionAdvice: {},
             nutritionAdviceNodes: [],
-            nutritionAdviceError: '获取营养建议失败，请检查网络或API密钥。'
+            nutritionAdviceError: '获取营养建议失败，请检查网络连接。'
           });
         });
       
@@ -287,19 +321,10 @@ Page({
    * 设置API密钥
    */
   setApiKey: function() {
-    wx.showModal({
-      title: '设置API密钥',
-      content: '请输入DeepSeek API密钥',
-      editable: true,
-      placeholderText: '请输入API密钥',
-      success: (res) => {
-        if (res.confirm && res.content) {
-          deepseek.setApiKey(res.content);
-          util.showToast('API密钥设置成功', 'success');
-          // 刷新建议
-          this.refreshAdvice();
-        }
-      }
+    wx.showToast({
+      title: '已使用内置API密钥',
+      icon: 'success',
+      duration: 2000
     });
   },
 

@@ -115,19 +115,19 @@
     </view>
     <view class="metrics-grid">
       <view class="metric-item">
-        <view class="metric-value">{{physicalStats.resting_heart_rate || '--'}}</view>
+        <view class="metric-value">{{physicalStats.resting_heart_rate || 0}}</view>
         <view class="metric-label">静息心率</view>
       </view>
       <view class="metric-item">
-        <view class="metric-value">{{physicalStats.aerobic_capacity || '--'}}</view>
+        <view class="metric-value">{{physicalStats.aerobic_capacity || 0}}</view>
         <view class="metric-label">有氧能力</view>
       </view>
       <view class="metric-item">
-        <view class="metric-value">{{physicalStats.stress_index || '--'}}%</view>
+        <view class="metric-value">{{physicalStats.stress_index || 0}}%</view>
         <view class="metric-label">压力指数</view>
       </view>
       <view class="metric-item">
-        <view class="metric-value">{{physicalStats.sleep_quality || '--'}}</view>
+        <view class="metric-value">{{physicalStats.sleep_quality || 0}}</view>
         <view class="metric-label">睡眠质量</view>
       </view>
       <view class="metric-item">

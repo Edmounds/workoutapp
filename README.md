@@ -1,81 +1,204 @@
-# API测试程序
+# 🌟 智能设备数据监控与分析系统 🌟
 
-## 项目说明
+<div align="center">
+  
+![版本](https://img.shields.io/badge/版本-1.0.0-blue.svg)
+![协议](https://img.shields.io/badge/协议-MIT-green.svg)
+![状态](https://img.shields.io/badge/状态-开发中-orange.svg)
 
-本测试程序用于验证后端API接口与API文档的一致性，以及测试数据库数据交换功能是否正常工作。测试会检查API的响应格式、字段和状态码是否与文档描述一致，同时验证数据是否正确写入数据库。
+</div>
 
-## 功能特点
+<p align="center">
+  <img src="https://via.placeholder.com/800x400?text=智能设备数据监控与分析系统" alt="项目横幅" width="80%">
+</p>
 
-- 测试API接口与文档描述的一致性
-- 验证API接口的正确性和可用性
-- 测试数据库交互和数据持久化功能
-- 自动化测试流程，便于持续集成
-- 彩色输出，提高测试结果可读性
+## ✨ 系统亮点
 
-## 测试范围
+<table>
+  <tr>
+    <td width="50%">
+      <h3 align="center">📱 多平台支持</h3>
+      <p align="center">Web前端 + 微信小程序，随时随地访问</p>
+    </td>
+    <td width="50%">
+      <h3 align="center">🔄 实时数据监控</h3>
+      <p align="center">设备数据实时上传与监控，及时响应异常</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3 align="center">📊 数据可视化</h3>
+      <p align="center">基于u-charts的精美图表展示，直观了解数据趋势</p>
+    </td>
+    <td width="50%">
+      <h3 align="center">🤖 智能分析</h3>
+      <p align="center">自动分析设备数据，提供专业建议</p>
+    </td>
+  </tr>
+</table>
 
-测试程序覆盖以下API端点：
+## 🏗️ 系统架构
 
-1. `POST /api/users/login` - 用户登录
-2. `GET /api/users/all/list` - 获取用户信息
-3. `GET /api/user/running_records` - 获取跑步记录
-4. `POST /api/user/upload_workout` - 上传运动数据
-5. `GET /api/physical/stats` - 获取体能数据
-6. `GET /api/nutrition/tips` - 获取营养建议
-7. `PUT /api/users/update` - 更新用户信息
-8. `GET /api/ai/advice` - 获取AI建议
-
-## 环境准备
-
-### 安装依赖
-
-```bash
-pip install -r requirements.txt
+```mermaid
+graph TD
+    A[设备模拟器] -->|数据上传| B[后端服务]
+    B -->|API接口| C[Web前端]
+    B -->|API接口| D[微信小程序]
+    C -->|用户交互| E[用户]
+    D -->|用户交互| E
+    B -->|数据处理| F[(数据库)]
+    F -->|数据读取| B
 ```
 
-### 配置
+## 🔍 主要功能
 
-测试程序使用的默认配置：
+<details>
+<summary>💻 设备监控与管理</summary>
 
-- 服务器地址：`http://localhost:5000`
-- 数据库地址：`113.45.220.0:3306`
-- 数据库用户：`cxr`
-- 数据库名称：`workout_app`
+- 实时监控设备状态
+- 远程控制设备开关
+- 设备异常自动报警
+- 设备数据历史记录查询
 
-如需修改，请编辑`api_test.py`文件中的配置部分。
+</details>
 
-## 使用方法
+<details>
+<summary>📈 数据分析与可视化</summary>
 
-### 运行测试
+- 多维度数据展示
+- 趋势分析与预测
+- 自定义数据看板
+- 数据报表导出功能
 
-确保后端服务器已启动，然后执行：
+</details>
+
+<details>
+<summary>👥 用户管理系统</summary>
+
+- 多级用户权限控制
+- 个人信息管理
+- 操作日志记录
+- 消息通知系统
+
+</details>
+
+<details>
+<summary>🔧 系统配置与维护</summary>
+
+- 系统参数配置
+- 备份与恢复
+- 性能监控
+- 系统日志分析
+
+</details>
+
+## 💎 技术栈
+
+### 后端
+- Node.js/Express
+- RESTful API设计
+- 中间件机制
+- JWT认证
+
+### 前端
+- Vue.js框架
+- Vuex状态管理
+- Vue Router
+- 响应式设计
+
+### 小程序
+- 微信小程序框架
+- u-charts图表库
+- 组件化开发
+- 微信云开发
+
+### 设备模拟器
+- IoT协议支持
+- 数据生成与模拟
+- 网络通信模块
+- 状态监控
+
+## 🚀 快速开始
+
+### 1️⃣ 安装依赖
 
 ```bash
-python api_test.py
+# 后端依赖安装
+cd backend
+npm install
+
+# 前端依赖安装
+cd ../frontend
+npm install
+
+# 设备模拟器依赖安装
+cd ../Device_Simulator
+npm install
 ```
 
-### 测试结果
+### 2️⃣ 启动系统
 
-测试程序会输出彩色结果，包括：
+```bash
+# 启动后端
+cd backend
+npm run start
 
-- 绿色：测试通过
-- 红色：测试失败或错误
-- 黄色：进行中的操作
-- 蓝色：测试信息
+# 启动前端
+cd ../frontend
+npm run serve
 
-测试结束后会显示汇总信息，包括测试总数、成功数、失败数和错误数。
+# 启动设备模拟器
+cd ../Device_Simulator
+npm run start
+```
 
-## 注意事项
+### 3️⃣ 小程序开发
 
-1. 确保后端服务器正在运行
-2. 确保数据库服务可访问
-3. 测试会向数据库写入真实数据，请注意使用测试环境
-4. 测试用户需已存在于数据库中（默认使用"cxyyy"）
+使用微信开发者工具打开`miniprogram3`目录
 
-## 开发扩展
+## 📖 项目文档
 
-如需添加新的测试用例，请按以下步骤操作：
+<div align="center">
+  
+[API文档](./API_Documentation.md) | [系统设计文档](https://example.com) | [用户手册](https://example.com)
 
-1. 在`APIDocConsistencyTest`类中添加新的测试方法
-2. 方法名以`test_`开头
-3. 遵循现有测试方法的模式，包括发送请求、检查响应和验证数据 
+</div>
+
+## 📊 项目演示
+
+<p align="center">
+  <img src="https://via.placeholder.com/200x400?text=小程序界面" width="20%" alt="小程序界面">
+  <img src="https://via.placeholder.com/200x400?text=数据分析" width="20%" alt="数据分析">
+  <img src="https://via.placeholder.com/200x400?text=设备监控" width="20%" alt="设备监控">
+  <img src="https://via.placeholder.com/200x400?text=系统设置" width="20%" alt="系统设置">
+</p>
+
+## 🔮 未来计划
+
+- [ ] 支持更多设备类型
+- [ ] AI智能分析模块
+- [ ] 移动应用开发
+- [ ] 云端部署方案
+
+## 👨‍💻 开发团队
+
+<div align="center">
+  
+| 角色 | 负责内容 |
+|------|----------|
+| 后端开发 | API设计与实现、数据处理、安全机制 |
+| 前端开发 | Web界面开发、交互设计、状态管理 |
+| 小程序开发 | 微信小程序界面、数据展示、用户体验 |
+| 设备模拟 | 模拟器开发、通信协议、数据生成 |
+
+</div>
+
+## 📜 协议
+
+本项目采用 MIT 协议开源，详情请参见 [LICENSE](LICENSE) 文件。
+
+---
+
+<div align="center">
+  <sub>软件系统架构课程项目 © 2023</sub>
+</div>

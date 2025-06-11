@@ -1,0 +1,44 @@
+<!-- records.wxml -->
+<view class="records-container">
+  <view class="page-header">
+    <view class="header-left">
+      <view class="back-button" bindtap="goBack">
+        <text class="back-icon">←</text>
+      </view>
+    </view>
+    <view class="header-title">{{title}}</view>
+    <view class="header-right"></view>
+  </view>
+
+  <view class="records-list">
+    <view wx:if="{{records.length === 0 && !isLoading}}" class="no-data">
+      <text>暂无运动记录</text>
+    </view>
+    <view wx:else class="record-items">
+      <view class="record-item" wx:for="{{records}}" wx:key="id" bindtap="viewRecordDetail" data-id="{{item.id}}">
+        <view class="record-date">
+          <text>{{item.formatted_time}}</text>
+        </view>
+        <view class="record-info">
+          <view class="record-type">{{item.workout_type || '跑步'}}</view>
+          <view class="record-stats">
+            <text>{{item.distance_km}}km</text>
+            <text class="record-dot">·</text>
+            <text>{{item.duration_minutes}}分钟</text>
+            <text class="record-dot">·</text>
+            <text>{{item.avg_pace_formatted || '--'}}/km</text>
+          </view>
+        </view>
+        <view class="record-arrow">
+          <text class="arrow-icon">></text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载提示 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+</view> 

@@ -1,0 +1,110 @@
+<!-- recordDetail.wxml -->
+<view class="detail-container">
+  <view class="page-header">
+    <view class="header-left">
+      <view class="back-button" bindtap="goBack">
+        <text class="back-icon">←</text>
+      </view>
+    </view>
+    <view class="header-title">{{title}}</view>
+    <view class="header-right"></view>
+  </view>
+
+  <view wx:if="{{record && !isLoading}}" class="detail-content">
+    <!-- 基本信息卡片 -->
+    <view class="detail-card">
+      <view class="card-header">
+        <text class="card-title">基本信息</text>
+      </view>
+      <view class="info-group">
+        <view class="info-item">
+          <text class="info-label">运动类型</text>
+          <text class="info-value">{{record.workout_type || '跑步'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">开始时间</text>
+          <text class="info-value">{{record.formatted_time || '未知'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">结束时间</text>
+          <text class="info-value">{{record.formatted_end_time || '未知'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">总时长</text>
+          <text class="info-value">{{record.formatted_duration || record.duration_minutes + '分钟' || '未知'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 运动指标卡片 -->
+    <view class="detail-card">
+      <view class="card-header">
+        <text class="card-title">运动指标</text>
+      </view>
+      <view class="stats-grid">
+        <view class="stats-item">
+          <view class="stats-value">{{record.distance_km || '0'}}</view>
+          <view class="stats-label">总里程(km)</view>
+        </view>
+        <view class="stats-item">
+          <view class="stats-value">{{record.avg_pace_formatted || '--'}}</view>
+          <view class="stats-label">平均配速</view>
+        </view>
+        <view class="stats-item">
+          <view class="stats-value">{{record.best_pace_formatted || '--'}}</view>
+          <view class="stats-label">最佳配速</view>
+        </view>
+        <view class="stats-item">
+          <view class="stats-value">{{record.calories || '0'}}</view>
+          <view class="stats-label">消耗(kcal)</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 心率数据卡片 -->
+    <view class="detail-card">
+      <view class="card-header">
+        <text class="card-title">心率数据</text>
+      </view>
+      <view class="stats-grid">
+        <view class="stats-item">
+          <view class="stats-value">{{record.avg_heart_rate || '--'}}</view>
+          <view class="stats-label">平均心率</view>
+        </view>
+        <view class="stats-item">
+          <view class="stats-value">{{record.max_heart_rate || '--'}}</view>
+          <view class="stats-label">最大心率</view>
+        </view>
+        <view class="stats-item">
+          <view class="stats-value">{{record.avg_step_rate || '--'}}</view>
+          <view class="stats-label">平均步频</view>
+        </view>
+        <view class="stats-item">
+          <view class="stats-value">{{record.elevation_gain || '0'}}</view>
+          <view class="stats-label">累计爬升(m)</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 备注卡片 -->
+    <view class="detail-card" wx:if="{{record.notes}}">
+      <view class="card-header">
+        <text class="card-title">备注</text>
+      </view>
+      <view class="notes-content">
+        <text>{{record.notes}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 没有记录时显示 -->
+  <view wx:if="{{!record && !isLoading}}" class="no-data">
+    <text>找不到该记录</text>
+  </view>
+
+  <!-- 加载提示 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+</view> 
